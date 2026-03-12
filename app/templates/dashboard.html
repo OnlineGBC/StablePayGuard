@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Codex PayRails Agent</title>
+
+<style>
+
+/* ---------- GLOBAL ---------- */
+
+body{
+font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto;
+margin:0;
+background:linear-gradient(180deg,#030712,#020617);
+color:#e5e7eb;
+display:flex;
+}
+
+/* ---------- SIDEBAR ---------- */
+
+.sidebar{
+width:250px;
+background:#020617;
+border-right:1px solid #1e293b;
+min-height:100vh;
+padding:20px;
+}
+
+.brand{
+display:flex;
+align-items:center;
+gap:10px;
+margin-bottom:25px;
+}
+
+.brand-logo{
+width:36px;
+height:36px;
+border-radius:10px;
+background:linear-gradient(135deg,#10b981,#059669);
+display:flex;
+align-items:center;
+justify-content:center;
+color:white;
+font-weight:700;
+}
+
+.nav a{
+display:block;
+padding:10px 14px;
+margin:6px 0;
+border-radius:10px;
+text-decoration:none;
+color:#94a3b8;
+}
+
+.nav a.active{
+background:linear-gradient(135deg,#10b981,#047857);
+color:white;
+}
+
+.nav a:hover{
+background:#111827;
+color:white;
+}
+
+/* ---------- MAIN ---------- */
+
+.main{
+flex:1;
+padding:30px;
+}
+
+/* ---------- TOP BAR ---------- */
+
+.topbar{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:25px;
+}
+
+.wallet-btn{
+background:linear-gradient(135deg,#10b981,#047857);
+border:none;
+padding:10px 16px;
+border-radius:10px;
+color:white;
+font-weight:600;
+cursor:pointer;
+}
+
+.pill{
+padding:6px 12px;
+border-radius:20px;
+border:1px solid #1e293b;
+color:#94a3b8;
+font-size:13px;
+}
+
+/* ---------- KPI CARDS ---------- */
+
+.cards{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:16px;
+margin-bottom:25px;
+}
+
+.kpi{
+background:linear-gradient(135deg,#10b981,#047857);
+border-radius:16px;
+padding:20px;
+box-shadow:0 10px 30px rgba(0,0,0,0.5);
+}
+
+.kpi-label{
+font-size:12px;
+opacity:.8;
+}
+
+.kpi-value{
+font-size:28px;
+font-weight:700;
+margin-top:8px;
+}
+
+/* ---------- PANELS ---------- */
+
+.panel{
+background:#020617;
+border-radius:18px;
+border:1px solid #1e293b;
+padding:20px;
+margin-bottom:20px;
+}
+
+/* ---------- CHART ---------- */
+
+.chart{
+display:flex;
+align-items:flex-end;
+gap:12px;
+height:200px;
+margin-top:20px;
+}
+
+.bar{
+width:40px;
+background:linear-gradient(180deg,#34d399,#10b981,#047857);
+border-radius:10px 10px 6px 6px;
+}
+
+.bar-label{
+font-size:12px;
+text-align:center;
+margin-top:6px;
+color:#94a3b8;
+}
+
+/* ---------- TABLE ---------- */
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th{
+text-align:left;
+font-size:12px;
+color:#94a3b8;
+padding:12px;
+}
+
+td{
+padding:12px;
+border-top:1px solid #1e293b;
+}
+
+.badge{
+padding:5px 10px;
+border-radius:20px;
+font-size:12px;
+}
+
+.success{
+background:#065f46;
+color:#6ee7b7;
+}
+
+.pending{
+background:#78350f;
+color:#fcd34d;
+}
+
+.failed{
+background:#7f1d1d;
+color:#fecaca;
+}
+
+/* ---------- FORM ---------- */
+
+input,select{
+width:100%;
+padding:10px;
+margin-top:6px;
+border-radius:10px;
+border:1px solid #1e293b;
+background:#030712;
+color:white;
+}
+
+button.primary{
+background:linear-gradient(135deg,#10b981,#047857);
+border:none;
+padding:10px 16px;
+border-radius:10px;
+color:white;
+margin-top:10px;
+cursor:pointer;
+}
+
+/* ---------- ACTIVITY ---------- */
+
+.activity{
+display:flex;
+justify-content:space-between;
+padding:10px 0;
+border-bottom:1px solid #1e293b;
+font-size:14px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<div class="brand">
+<div class="brand-logo">C</div>
+<div>
+<strong>Codex PayRails</strong><br>
+<small>AI payment operations</small>
+</div>
+</div>
+
+<div class="nav">
+<a class="active">Dashboard</a>
+<a>Policies</a>
+<a>Payments</a>
+<a>Agents</a>
+<a>Transactions</a>
+<a>Analytics</a>
+<a>Wallets</a>
+<a>Settings</a>
+</div>
+
+</div>
+
+<div class="main">
+
+<div class="topbar">
+
+<div>
+<h2>Payment Control Dashboard</h2>
+<p style="color:#94a3b8;">Professional control plane for AI-managed payments</p>
+</div>
+
+<div style="display:flex;gap:10px;align-items:center;">
+<div class="pill">System healthy</div>
+<div class="pill" id="walletStatus">Wallet not connected</div>
+<button class="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+</div>
+
+</div>
+
+<!-- KPI -->
+
+<div class="cards">
+
+<div class="kpi">
+<div class="kpi-label">POLICIES CREATED</div>
+<div class="kpi-value" id="policyCount">0</div>
+</div>
+
+<div class="kpi">
+<div class="kpi-label">PAYMENTS EXECUTED</div>
+<div class="kpi-value" id="paymentCount">0</div>
+</div>
+
+<div class="kpi">
+<div class="kpi-label">MONTHLY VOLUME</div>
+<div class="kpi-value" id="volumeValue">$0</div>
+</div>
+
+<div class="kpi">
+<div class="kpi-label">APPROVAL RATE</div>
+<div class="kpi-value" id="approvalRate">96%</div>
+</div>
+
+</div>
+
+<!-- CHART -->
+
+<div class="panel">
+
+<h3>Payments Overview</h3>
+
+<div class="chart" id="chart"></div>
+
+</div>
+
+<!-- TABLE -->
+
+<div class="panel">
+
+<h3>Transactions</h3>
+
+<table>
+
+<thead>
+<tr>
+<th>Transaction</th>
+<th>Recipient</th>
+<th>Policy</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Network</th>
+</tr>
+</thead>
+
+<tbody id="txTable"></tbody>
+
+</table>
+
+</div>
+
+<!-- ACTIVITY -->
+
+<div class="panel">
+
+<h3>Recent Activity</h3>
+
+<div id="activityList"></div>
+
+</div>
+
+<!-- POLICY CREATION -->
+
+<div class="panel">
+
+<h3>Create Payment Policy</h3>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;">
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Agent Address</label>
+<input id="f_agent" type="text" placeholder="0xAgentAddress">
+</div>
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Token</label>
+<select id="f_token">
+<option value="ETH">ETH</option>
+<option value="USDC">USDC</option>
+<option value="DAI">DAI</option>
+</select>
+</div>
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Total Budget (USD)</label>
+<input id="f_budget" type="number" placeholder="10000">
+</div>
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Per-Tx Limit (USD)</label>
+<input id="f_perTx" type="number" placeholder="500">
+</div>
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Valid From (Unix timestamp)</label>
+<input id="f_validFrom" type="number" placeholder="1700000000">
+</div>
+
+<div>
+<label style="font-size:12px;color:#94a3b8;">Valid Until (Unix timestamp)</label>
+<input id="f_validUntil" type="number" placeholder="1800000000">
+</div>
+
+<div style="grid-column:1/-1;">
+<label style="font-size:12px;color:#94a3b8;">Purpose</label>
+<input id="f_purpose" type="text" placeholder="e.g. SaaS vendor payments">
+</div>
+
+</div>
+
+<button class="primary" onclick="createPolicy()">Deploy Policy</button>
+
+<div id="policyResult" style="margin-top:10px;font-size:13px;color:#34d399;"></div>
+
+</div>
+
+<!-- AI PAYMENT INTENT -->
+
+<div class="panel">
+
+<h3>AI Payment Intent</h3>
+
+<div style="margin-top:16px;">
+<label style="font-size:12px;color:#94a3b8;">Describe the payment task</label>
+<input id="f_task" type="text" placeholder="Pay $200 to AWS for cloud hosting">
+</div>
+
+<button class="primary" onclick="generateIntent()">Generate Intent</button>
+
+<pre id="intentResult" style="margin-top:12px;background:#030712;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:13px;color:#34d399;white-space:pre-wrap;display:none;"></pre>
+
+</div>
+
+</div>
+
+<script>
+
+async function loadDashboard(){
+
+const res = await fetch("/api/dashboard")
+const data = await res.json()
+
+document.getElementById("policyCount").innerText = data.kpi.policies
+document.getElementById("paymentCount").innerText = data.kpi.payments
+document.getElementById("volumeValue").innerText = "$"+data.kpi.volume
+document.getElementById("approvalRate").innerText = data.kpi.approval_rate+"%"
+
+if(data.wallet.connected){
+document.getElementById("walletStatus").innerText="Wallet "+data.wallet.address
+}
+
+const table = document.getElementById("txTable")
+table.innerHTML=""
+
+data.transactions.forEach(tx=>{
+
+table.innerHTML += `
+<tr>
+<td>${tx.id}</td>
+<td>${tx.recipient}</td>
+<td>${tx.policy}</td>
+<td>$${tx.amount}</td>
+<td><span class="badge ${tx.status.toLowerCase()}">${tx.status}</span></td>
+<td>${tx.hash}</td>
+</tr>
+`
+})
+
+const activity = document.getElementById("activityList")
+activity.innerHTML=""
+
+data.activity.forEach(a=>{
+
+activity.innerHTML += `
+<div class="activity">
+<div>${a.action}</div>
+<div>${a.time}</div>
+</div>
+`
+})
+
+}
+
+async function connectWallet(){
+
+await fetch("/api/wallet/connect",{method:"POST"})
+loadDashboard()
+
+}
+
+async function loadChart(){
+
+const res = await fetch("/api/charts/payments")
+const data = await res.json()
+
+const chart = document.getElementById("chart")
+chart.innerHTML=""
+
+data.forEach(d=>{
+
+const height = d.value/80
+
+chart.innerHTML += `
+<div style="text-align:center;">
+<div class="bar" style="height:${height}px"></div>
+<div class="bar-label">${d.day}</div>
+</div>
+`
+})
+
+}
+
+async function createPolicy(){
+
+const payload = {
+agent: document.getElementById("f_agent").value,
+token: document.getElementById("f_token").value,
+totalBudget: document.getElementById("f_budget").value,
+perTxLimit: document.getElementById("f_perTx").value,
+validFrom: document.getElementById("f_validFrom").value || "0",
+validUntil: document.getElementById("f_validUntil").value || "0",
+purpose: document.getElementById("f_purpose").value
+}
+
+const res = await fetch("/api/policies",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify(payload)
+})
+const data = await res.json()
+document.getElementById("policyResult").innerText = `Policy ${data.policyId} deployed (tx: ${data.txHash})`
+loadDashboard()
+
+}
+
+async function generateIntent(){
+
+const task = document.getElementById("f_task").value
+if(!task) return
+
+const res = await fetch("/api/payment-intent",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({task})
+})
+const data = await res.json()
+const el = document.getElementById("intentResult")
+el.style.display="block"
+el.innerText = JSON.stringify(data, null, 2)
+
+}
+
+loadDashboard()
+loadChart()
+
+</script>
+
+</body>
+</html>
+
+

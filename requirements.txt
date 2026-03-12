@@ -1,0 +1,9 @@
+flask>=3.0.0
+web3
+python-dotenv
+eth-account
+pydantic
+sqlalchemy
+openai
+gunicorn>=21.0.0
+werkzeug>=3.0.0

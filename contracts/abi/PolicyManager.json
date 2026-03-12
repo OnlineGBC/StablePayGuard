@@ -1,0 +1,45 @@
+[
+  {
+    "inputs": [
+      {"name": "agent",       "type": "address"},
+      {"name": "token",       "type": "address"},
+      {"name": "totalBudget", "type": "uint256"},
+      {"name": "perTxLimit",  "type": "uint256"},
+      {"name": "validFrom",   "type": "uint256"},
+      {"name": "validUntil",  "type": "uint256"},
+      {"name": "purposeHash", "type": "bytes32"},
+      {"name": "active",      "type": "bool"}
+    ],
+    "name": "createPolicy",
+    "outputs": [{"name": "policyId", "type": "uint256"}],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{"name": "policyId", "type": "uint256"}],
+    "name": "getPolicy",
+    "outputs": [
+      {"name": "agent",       "type": "address"},
+      {"name": "token",       "type": "address"},
+      {"name": "totalBudget", "type": "uint256"},
+      {"name": "perTxLimit",  "type": "uint256"},
+      {"name": "validFrom",   "type": "uint256"},
+      {"name": "validUntil",  "type": "uint256"},
+      {"name": "purposeHash", "type": "bytes32"},
+      {"name": "active",      "type": "bool"}
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {"indexed": true,  "name": "policyId", "type": "uint256"},
+      {"indexed": true,  "name": "agent",    "type": "address"},
+      {"indexed": false, "name": "token",    "type": "address"},
+      {"indexed": false, "name": "budget",   "type": "uint256"}
+    ],
+    "name": "PolicyCreated",
+    "type": "event"
+  }
+]
