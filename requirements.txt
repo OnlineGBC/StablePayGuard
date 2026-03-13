@@ -7,3 +7,4 @@ sqlalchemy
 openai
 gunicorn>=21.0.0
 werkzeug>=3.0.0
+py-solc-x
