@@ -1,28 +1,83 @@
 # Codex PayRails Agent
 
-AI‑Managed Payment Policy Control Dashboard
+![Python](https://img.shields.io/badge/python-3.10-blue)
+![Flask](https://img.shields.io/badge/flask-3.x-green)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
-Codex PayRails Agent is a Flask‑based fintech operations dashboard that
-allows operators to define, monitor, and control AI‑managed payment
-policies while observing payment activity in real time.
+**Intelligent Spend Management for the AI-Driven Enterprise**
 
-The system simulates a payment control plane similar to internal
-dashboards used by:
+------------------------------------------------------------------------
 
--   Stripe
--   Ramp
--   Plaid
--   Coinbase
--   Mercury Bank
+## What Is This?
 
-The UI uses a **dark fintech theme with emerald/green highlights** and
-provides tools for:
+Most companies still manage Accounts Payable the same way they did 20 years ago — a human reviews every invoice, approves every payment, and chases down every exception. It's slow, error-prone, and doesn't scale.
 
--   policy creation
--   wallet connection
--   transaction monitoring
--   analytics visualization
--   activity tracking
+**Codex PayRails Agent** replaces that bottleneck with AI agents that handle routine payments automatically — while giving finance and operations teams a real-time control room to set the rules, monitor activity, and stay in control.
+
+Think of it as a **corporate AP department where AI does the routine work and humans set the guardrails.**
+
+------------------------------------------------------------------------
+
+## Who It's For
+
+- **Finance & AP Teams** who want to automate vendor payments, contractor disbursements, and recurring software subscriptions without losing oversight
+- **CFOs & Controllers** who need real-time visibility into what's being spent, by whom, and against what budget
+- **Engineering & Operations Teams** managing cloud infrastructure spend across multiple providers
+- **Startups & Scale-ups** building autonomous AI workflows that involve money movement
+
+------------------------------------------------------------------------
+
+## What It Does
+
+**Spending Policies** — Define exactly what an AI agent is allowed to spend. Set a total budget, a per-transaction limit, an allowed time window, and a stated purpose. The agent cannot spend outside those rules.
+
+**AI Payment Intent** — Describe a payment in plain English (*"Pay $200 to AWS for cloud hosting"*) and the system converts it into a structured, policy-validated payment instruction automatically.
+
+**Transaction Monitoring** — A live ledger of every payment — completed, pending, or rejected — with full audit trail including network hash.
+
+**Agent Registry** — Track which AI agents are active, how much of their budget has been consumed, and a full log of their actions.
+
+**Analytics** — Spending trends, approval rates, weekly volume, and transaction status breakdowns — all in one view.
+
+**Wallet & Settlement** — Connect a crypto wallet for on-chain policy deployment and settlement via Ethereum-compatible networks.
+
+------------------------------------------------------------------------
+
+## The Business Case
+
+| Traditional AP | Codex PayRails Agent |
+|---|---|
+| Manual invoice approval | AI agents execute within pre-approved policies |
+| Slow payment cycles | Payments execute instantly within policy rules |
+| Limited audit trail | Every transaction logged with network hash |
+| Reactive spend controls | Proactive policy enforcement before payment |
+| Siloed tools | Unified dashboard across agents, policies, and payments |
+
+------------------------------------------------------------------------
+
+## Quick Start
+
+```bash
+pip install -r requirements.txt
+python app/app.py
+```
+
+Open **http://localhost:5000**
+
+------------------------------------------------------------------------
+
+------------------------------------------------------------------------
+
+# Quick Start
+
+``` bash
+pip install -r requirements.txt
+python app.py
+```
+
+Open:
+
+    http://localhost:5000
 
 ------------------------------------------------------------------------
 
@@ -87,7 +142,7 @@ Future production architecture:
 
 ------------------------------------------------------------------------
 
-# Project Directory Structure
+# Project Structure
 
     CodexPayRailsAgent/
 
@@ -97,6 +152,8 @@ Future production architecture:
     ├── static/
     │   └── (future JS / CSS separation)
     ├── requirements.txt
+    ├── CONTRIBUTING.md
+    ├── ARCHITECTURE.md
     └── README.md
 
 ------------------------------------------------------------------------
@@ -172,7 +229,7 @@ Statuses:
 
 ## Activity Feed
 
-Displays recent system events such as:
+Displays recent system events:
 
     Policy created
     Wallet connected
@@ -190,38 +247,36 @@ Displays recent system events such as:
   `/api/wallet/connect`    POST     Simulates wallet connection
   `/api/charts/payments`   GET      Returns chart data
 
-------------------------------------------------------------------------
+Example response:
 
-## Example Dashboard Response
-
-    GET /api/dashboard
-
-    {
-      "kpi": {
-        "policies": 3,
-        "payments": 18,
-        "volume": 42800,
-        "approval_rate": 96.2
-      },
-      "transactions": [],
-      "activity": [],
-      "wallet": {}
-    }
+``` json
+{
+  "kpi": {
+    "policies": 3,
+    "payments": 18,
+    "volume": 42800,
+    "approval_rate": 96.2
+  },
+  "transactions": [],
+  "activity": [],
+  "wallet": {}
+}
+```
 
 ------------------------------------------------------------------------
 
 # Local Development Setup
 
-## Clone repository
+Clone repository
 
     git clone https://github.com/yourrepo/codex-payrails-agent.git
     cd CodexPayRailsAgent
 
-## Create Python environment
+Create Python environment
 
     python -m venv venv
 
-Activate:
+Activate
 
 Windows
 
@@ -231,40 +286,25 @@ Mac/Linux
 
     source venv/bin/activate
 
-------------------------------------------------------------------------
-
-## Install dependencies
-
-    pip install flask
-    pip install python-dotenv
-
-or
+Install dependencies
 
     pip install -r requirements.txt
 
-------------------------------------------------------------------------
-
-## Run server
+Run server
 
     python app.py
-
-Open browser
-
-    http://127.0.0.1:5000
 
 ------------------------------------------------------------------------
 
 # Environment Variables
 
-Create a `.env` file.
-
-Example:
+Create `.env`
 
     OPENAI_API_KEY=your_key
     FLASK_ENV=development
     APP_PORT=5000
 
-Future configuration:
+Future configuration
 
     DATABASE_URL=postgres://...
     RPC_URL=https://eth-mainnet...
@@ -277,22 +317,17 @@ Future configuration:
 Example Dockerfile
 
     FROM python:3.10
-
     WORKDIR /app
-
     COPY . .
-
-    RUN pip install flask python-dotenv
-
+    RUN pip install -r requirements.txt
     EXPOSE 5000
-
     CMD ["python","app.py"]
 
 Build container
 
     docker build -t codex-payrails .
 
-Run
+Run container
 
     docker run -p 5000:5000 codex-payrails
 
@@ -300,19 +335,19 @@ Run
 
 # Screenshots
 
-Suggested folder structure:
-
-    docs/screenshots/dashboard.png
-    docs/screenshots/policies.png
-    docs/screenshots/transactions.png
-
-Example dashboard view includes:
+Example dashboard contains:
 
 -   KPI cards
 -   payments chart
 -   transaction table
 -   activity feed
 -   policy creation panel
+
+Suggested directory:
+
+    docs/screenshots/dashboard.png
+    docs/screenshots/policies.png
+    docs/screenshots/transactions.png
 
 ------------------------------------------------------------------------
 
@@ -344,31 +379,17 @@ Benefits:
 
 # Product Roadmap
 
-### Phase 1 --- Prototype
+Phase 1 --- Prototype - Flask dashboard - Policy creation - Wallet
+simulation - Transaction monitoring
 
-✔ Flask dashboard\
-✔ Policy creation\
-✔ Wallet simulation\
-✔ Transaction monitoring
+Phase 2 --- Data Layer - PostgreSQL persistence - authentication
+system - multi‑user dashboards
 
-### Phase 2 --- Data Layer
+Phase 3 --- Real Payment Rails - blockchain wallet integration - bank
+payment APIs - real settlement tracking
 
--   PostgreSQL persistence
--   authentication system
--   multi‑user dashboards
-
-### Phase 3 --- Real Payment Rails
-
--   blockchain wallet integration
--   bank payment APIs
--   real settlement tracking
-
-### Phase 4 --- AI Agent Platform
-
--   autonomous payment agents
--   anomaly detection
--   spending predictions
--   policy auto‑optimization
+Phase 4 --- AI Agent Platform - autonomous payment agents - anomaly
+detection - spending predictions - policy auto‑optimization
 
 ------------------------------------------------------------------------
 
@@ -376,35 +397,16 @@ Benefits:
 
 Future production system should address:
 
-### PCI‑DSS
-
-Secure handling of payment information
-
-### AML
-
-Anti‑money‑laundering monitoring
-
-### Audit Logging
-
-Immutable transaction logs
-
-### Access Control
-
-Role‑based permissions
-
-### Encryption
-
-Secure key management
-
-### Rate Limiting
-
-Prevent API abuse
+PCI‑DSS --- secure handling of payment information\
+AML --- anti‑money‑laundering monitoring\
+Audit logging --- immutable transaction logs\
+Access control --- role‑based permissions\
+Encryption --- secure key management\
+Rate limiting --- prevent API abuse
 
 ------------------------------------------------------------------------
 
 # Contributing
-
-Steps:
 
 1.  Fork repository
 2.  Create branch
@@ -412,9 +414,9 @@ Steps:
 ```{=html}
 <!-- -->
 ```
-    git checkout -b feature/new-feature
+    git checkout -b feature/my-feature
 
-3.  Commit changes
+3.  Commit
 
 ```{=html}
 <!-- -->
@@ -426,7 +428,7 @@ Steps:
 ```{=html}
 <!-- -->
 ```
-    git push origin feature/new-feature
+    git push origin feature/my-feature
 
 5.  Open Pull Request
 
@@ -451,18 +453,3 @@ The software is provided "as is", without warranty of any kind.
 
 ------------------------------------------------------------------------
 
-# Summary
-
-Codex PayRails Agent currently provides:
-
--   modern fintech dashboard
--   Flask API backend
--   payment policy management
--   wallet connection simulation
--   transaction monitoring
--   analytics chart
--   activity logging
--   emerald themed UI
-
-The platform is designed to evolve into a **full AI‑driven payment
-orchestration and policy enforcement system**.
