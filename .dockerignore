@@ -1,0 +1,15 @@
+.git
+.github
+.env
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+node_modules
+.DS_Store
+contracts/audit
+docs
+tests
+*.md
+CodexPayRailsAgent_repo_files.zip
+PayRails_Info.txt
