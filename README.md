@@ -3,6 +3,8 @@
 ![Python](https://img.shields.io/badge/python-3.10-blue)
 ![Flask](https://img.shields.io/badge/flask-3.x-green)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
+![Slither](https://img.shields.io/badge/slither-0%20high%2F0%20medium-brightgreen)
+![Audit](https://img.shields.io/badge/audit-CertiK%20SkyNet%20in%20progress-yellow)
 
 **Intelligent Spend Management for the AI-Driven Enterprise**
 
@@ -348,6 +350,26 @@ Suggested directory:
     docs/screenshots/dashboard.png
     docs/screenshots/policies.png
     docs/screenshots/transactions.png
+
+------------------------------------------------------------------------
+
+# Smart Contract Security
+
+**PolicyManager.sol** — deployed to Sepolia testnet at
+`0x16229C14aAa18C7bC069f5b9092f5Af8884f3781`
+
+Static analysis with [Slither](https://github.com/crytic/slither) v0.11.5 (Solidity 0.8.28):
+
+| Detector | Severity | Outcome |
+|----------|----------|---------|
+| `immutable-states` (owner) | Optimization | Fixed — owner declared `immutable` |
+| `solc-version` (^0.8.20) | Informational | Fixed — pragma pinned to `0.8.28` |
+| `block.timestamp` comparisons | Low | Accepted — validity windows are days/months |
+| High and Medium detectors (all 99 others) | High / Medium | None found |
+
+Full report: [`contracts/audit/slither_report.md`](contracts/audit/slither_report.md)
+
+CertiK SkyNet automated scan: in progress.
 
 ------------------------------------------------------------------------
 

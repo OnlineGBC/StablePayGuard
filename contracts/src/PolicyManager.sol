@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity 0.8.28;
 
 /// @title PolicyManager
 /// @notice On-chain spending policy enforcement for AI payment agents.
@@ -27,7 +27,7 @@ contract PolicyManager {
     // State
     // -----------------------------------------------------------------------
 
-    address public owner;
+    address public immutable owner;
     uint256 public policyCount;
 
     mapping(uint256 => Policy) public policies;
