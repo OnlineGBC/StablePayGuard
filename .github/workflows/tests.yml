@@ -22,9 +22,9 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: payrails_test
-          POSTGRES_USER: payrails
-          POSTGRES_PASSWORD: payrails
+          POSTGRES_DB: stablepayguard_test
+          POSTGRES_USER: stablepayguard
+          POSTGRES_PASSWORD: stablepayguard
         ports:
           - 5432:5432
         options: >-
@@ -46,7 +46,7 @@ jobs:
 
       - name: Run tests
         env:
-          DATABASE_URL: postgresql://payrails:payrails@localhost:5432/payrails_test
+          DATABASE_URL: postgresql://stablepayguard:stablepayguard@localhost:5432/stablepayguard_test
           SECRET_KEY: ci-test-secret
           ADMIN_PASSWORD: testpass
           OPENAI_API_KEY: ""

@@ -5,7 +5,7 @@ from unittest.mock import patch, MagicMock
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../app"))
 
-os.environ.setdefault("DATABASE_URL", "postgresql://payrails:payrails@localhost:5432/payrails_test")
+os.environ.setdefault("DATABASE_URL", "postgresql://stablepayguard:stablepayguard@localhost:5432/stablepayguard_test")
 os.environ.setdefault("SECRET_KEY", "test-secret")
 
 
