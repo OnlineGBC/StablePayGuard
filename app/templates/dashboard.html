@@ -63,6 +63,7 @@ input,select,textarea{width:100%;padding:10px;border-radius:10px;border:1px soli
 textarea{resize:vertical;min-height:80px;}
 button.primary{background:linear-gradient(135deg,#10b981,#047857);border:none;padding:10px 20px;border-radius:10px;color:white;margin-top:12px;cursor:pointer;font-size:14px;font-weight:600;}
 button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20px;border-radius:10px;color:#94a3b8;margin-top:12px;cursor:pointer;font-size:14px;}
+button.primary:disabled{opacity:0.6;cursor:not-allowed;}
 
 /* ---------- ACTIVITY ---------- */
 .activity{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1e293b;font-size:14px;}
@@ -79,10 +80,39 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 .empty{text-align:center;padding:40px;color:#475569;}
 .empty-icon{font-size:40px;margin-bottom:12px;}
 
+/* ---------- SPINNER ---------- */
+.spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ---------- TOAST ---------- */
+#toast{position:fixed;bottom:24px;right:24px;background:#1e293b;border:1px solid #334155;color:#e5e7eb;padding:12px 20px;border-radius:12px;font-size:14px;z-index:9999;display:none;max-width:360px;}
+#toast.error{border-color:#ef4444;color:#fecaca;}
+#toast.success{border-color:#10b981;color:#6ee7b7;}
+
+/* ---------- LOGIN OVERLAY ---------- */
+#loginOverlay{position:fixed;inset:0;background:rgba(2,6,23,0.97);z-index:8000;display:flex;align-items:center;justify-content:center;}
+.login-card{background:#0f172a;border:1px solid #1e293b;border-radius:20px;padding:40px;width:360px;text-align:center;}
+.login-card h2{margin:0 0 8px;font-size:22px;}
+.login-card p{color:#64748b;font-size:14px;margin:0 0 24px;}
+.login-card input{margin-bottom:12px;}
+#loginError{color:#fca5a5;font-size:13px;margin-bottom:8px;min-height:20px;}
+
 </style>
 </head>
 
 <body>
+
+<!-- ===================== LOGIN OVERLAY ===================== -->
+<div id="loginOverlay">
+  <div class="login-card">
+    <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;margin:0 auto 16px;">C</div>
+    <h2>Codex PayRails</h2>
+    <p>Enter your admin password to continue</p>
+    <input type="password" id="loginPassword" placeholder="Password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div id="loginError"></div>
+    <button class="primary" style="width:100%;margin-top:0;" onclick="doLogin()">Sign In</button>
+  </div>
+</div>
 
 <!-- ===================== SIDEBAR ===================== -->
 
@@ -104,6 +134,10 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <a onclick="navigate('settings')" data-section="settings">Settings</a>
 </div>
 
+<div style="margin-top:auto;padding-top:20px;">
+  <button class="secondary" style="width:100%;margin-top:0;font-size:13px;" onclick="doLogout()">Sign Out</button>
+</div>
+
 </div>
 
 <!-- ===================== MAIN ===================== -->
@@ -117,9 +151,9 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <p style="color:#94a3b8;margin:4px 0 0;">Professional control plane for AI-managed payments</p>
 </div>
 <div style="display:flex;gap:10px;align-items:center;">
-<div class="pill">System healthy</div>
+<div class="pill" id="contractStatus">Checking contract...</div>
 <div class="pill" id="walletStatus">Wallet not connected</div>
-<button class="wallet-btn" onclick="connectWallet()">Connect Wallet</button>
+<button class="wallet-btn" onclick="navigate('wallets')">Connect Wallet</button>
 </div>
 </div>
 
@@ -127,15 +161,15 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <div class="section active" id="sec-dashboard">
 
 <div class="cards">
-<div class="kpi"><div class="kpi-label">POLICIES CREATED</div><div class="kpi-value" id="policyCount">0</div></div>
-<div class="kpi"><div class="kpi-label">PAYMENTS EXECUTED</div><div class="kpi-value" id="paymentCount">0</div></div>
-<div class="kpi"><div class="kpi-label">MONTHLY VOLUME</div><div class="kpi-value" id="volumeValue">$0</div></div>
-<div class="kpi"><div class="kpi-label">APPROVAL RATE</div><div class="kpi-value" id="approvalRate">96%</div></div>
+<div class="kpi"><div class="kpi-label">POLICIES CREATED</div><div class="kpi-value" id="policyCount">—</div></div>
+<div class="kpi"><div class="kpi-label">PAYMENTS EXECUTED</div><div class="kpi-value" id="paymentCount">—</div></div>
+<div class="kpi"><div class="kpi-label">MONTHLY VOLUME</div><div class="kpi-value" id="volumeValue">—</div></div>
+<div class="kpi"><div class="kpi-label">APPROVAL RATE</div><div class="kpi-value" id="approvalRate">—</div></div>
 </div>
 
 <div class="panel">
 <h3>Payments Overview</h3>
-<div class="chart" id="chart"></div>
+<div class="chart" id="chart"><div style="color:#475569;margin:auto;">Loading chart...</div></div>
 </div>
 
 <div class="panel">
@@ -171,17 +205,17 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <div class="panel">
 <h3>Create Payment Policy</h3>
 <div class="form-grid">
-<div><label>Agent Address</label><input id="f_agent" type="text" placeholder="0xAgentAddress"></div>
-<div><label>Token</label>
+<div><label>Agent Address *</label><input id="f_agent" type="text" placeholder="0xAgentAddress"></div>
+<div><label>Token *</label>
 <select id="f_token"><option value="ETH">ETH</option><option value="USDC">USDC</option><option value="DAI">DAI</option></select>
 </div>
-<div><label>Total Budget (USD)</label><input id="f_budget" type="number" placeholder="10000"></div>
-<div><label>Per-Tx Limit (USD)</label><input id="f_perTx" type="number" placeholder="500"></div>
-<div><label>Valid From (Unix timestamp)</label><input id="f_validFrom" type="number" placeholder="1700000000"></div>
-<div><label>Valid Until (Unix timestamp)</label><input id="f_validUntil" type="number" placeholder="1800000000"></div>
-<div class="form-full"><label>Purpose</label><input id="f_purpose" type="text" placeholder="e.g. SaaS vendor payments"></div>
+<div><label>Total Budget (USD) *</label><input id="f_budget" type="number" placeholder="10000" min="1"></div>
+<div><label>Per-Tx Limit (USD) *</label><input id="f_perTx" type="number" placeholder="500" min="1"></div>
+<div><label>Valid From (Unix timestamp)</label><input id="f_validFrom" type="number" placeholder="0"></div>
+<div><label>Valid Until (Unix timestamp)</label><input id="f_validUntil" type="number" placeholder="0"></div>
+<div class="form-full"><label>Purpose *</label><input id="f_purpose" type="text" placeholder="e.g. SaaS vendor payments"></div>
 </div>
-<button class="primary" onclick="createPolicy()">Deploy Policy</button>
+<button class="primary" id="createPolicyBtn" onclick="createPolicy()">Deploy Policy</button>
 <div id="policyResult" style="margin-top:10px;font-size:13px;color:#34d399;"></div>
 </div>
 
@@ -195,11 +229,11 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <p style="color:#94a3b8;font-size:14px;">Describe a payment task in plain English and the AI will generate a structured payment intent.</p>
 <div class="form-grid">
 <div class="form-full">
-<label>Payment Task Description</label>
+<label>Payment Task Description *</label>
 <textarea id="f_task" placeholder="e.g. Pay $200 to AWS for cloud hosting this month"></textarea>
 </div>
 </div>
-<button class="primary" onclick="generateIntent()">Generate Intent</button>
+<button class="primary" id="intentBtn" onclick="generateIntent()">Generate Intent</button>
 <pre id="intentResult" style="margin-top:12px;background:#030712;border:1px solid #1e293b;border-radius:10px;padding:12px;font-size:13px;color:#34d399;white-space:pre-wrap;display:none;"></pre>
 </div>
 
@@ -272,10 +306,10 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <div class="section" id="sec-analytics">
 
 <div class="cards">
-<div class="kpi"><div class="kpi-label">TOTAL VOLUME</div><div class="kpi-value" id="analyticsVolume">$0</div></div>
-<div class="kpi"><div class="kpi-label">AVG TX SIZE</div><div class="kpi-value" id="analyticsAvg">$0</div></div>
-<div class="kpi"><div class="kpi-label">APPROVAL RATE</div><div class="kpi-value" id="analyticsApproval">96%</div></div>
-<div class="kpi"><div class="kpi-label">ACTIVE POLICIES</div><div class="kpi-value" id="analyticsPolicies">0</div></div>
+<div class="kpi"><div class="kpi-label">TOTAL VOLUME</div><div class="kpi-value" id="analyticsVolume">—</div></div>
+<div class="kpi"><div class="kpi-label">AVG TX SIZE</div><div class="kpi-value" id="analyticsAvg">—</div></div>
+<div class="kpi"><div class="kpi-label">APPROVAL RATE</div><div class="kpi-value" id="analyticsApproval">—</div></div>
+<div class="kpi"><div class="kpi-label">ACTIVE POLICIES</div><div class="kpi-value" id="analyticsPolicies">—</div></div>
 </div>
 
 <div class="panel">
@@ -300,7 +334,7 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <select id="q_tokenIn"><option>ETH</option><option>WBTC</option><option>USDC</option><option>DAI</option></select></div>
 <div><label>To Token</label>
 <select id="q_tokenOut"><option selected>USDC</option><option>ETH</option><option>DAI</option><option>WBTC</option></select></div>
-<div><label>Amount (USD)</label><input id="q_amount" type="number" placeholder="1000"></div>
+<div><label>Amount (USD)</label><input id="q_amount" type="number" placeholder="1000" min="0.01"></div>
 <div><button class="primary" style="margin-top:0;" onclick="getSwapQuote()">Get Quote</button></div>
 </div>
 <div id="swapQuoteResult" style="display:none;margin-top:12px;padding:14px;background:#0f172a;border-radius:12px;border:1px solid #1e293b;font-size:14px;"></div>
@@ -317,11 +351,18 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <div id="walletInfo" style="margin-top:16px;">
 <div style="display:flex;align-items:center;gap:16px;padding:20px;background:#0f172a;border-radius:14px;border:1px solid #1e293b;">
 <div style="width:48px;height:48px;border-radius:12px;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;font-size:24px;">👛</div>
-<div>
+<div style="flex:1;">
 <div id="walletAddress" style="font-weight:600;">Not connected</div>
 <div id="walletConnState" style="font-size:13px;color:#64748b;margin-top:4px;">Connect a wallet to enable on-chain policy deployment</div>
 </div>
-<button class="primary" onclick="connectWallet()" style="margin-top:0;margin-left:auto;">Connect Wallet</button>
+</div>
+<div style="margin-top:16px;">
+<label>Ethereum Address (optional — leave blank for demo)</label>
+<div style="display:flex;gap:10px;margin-top:4px;">
+  <input id="f_walletAddress" type="text" placeholder="0x..." style="flex:1;">
+  <button class="primary" id="connectWalletBtn" style="margin-top:0;white-space:nowrap;" onclick="connectWallet()">Connect</button>
+</div>
+<div id="walletError" style="color:#fca5a5;font-size:13px;margin-top:6px;"></div>
 </div>
 </div>
 </div>
@@ -343,12 +384,12 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <div class="panel">
 <h3>API Configuration</h3>
 <div class="form-grid">
-<div><label>OpenAI API Key</label><input type="password" placeholder="sk-..."></div>
+<div><label>Synth / Hackathon API Key</label><input type="password" placeholder="sk-synth-..."></div>
+<div><label>OpenAI API Key (fallback)</label><input type="password" placeholder="sk-..."></div>
 <div><label>RPC URL</label><input type="text" placeholder="https://sepolia.infura.io/v3/..."></div>
 <div><label>Policy Contract Address</label><input type="text" placeholder="0x..."></div>
-<div><label>Owner Wallet</label><input type="text" placeholder="0x..."></div>
 </div>
-<button class="primary" onclick="alert('Settings saved (UI demo only)')">Save Settings</button>
+<button class="primary" onclick="showToast('Settings are configured via environment variables on the server.','info')">Save Settings</button>
 </div>
 
 <div class="panel">
@@ -358,13 +399,13 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 <span style="color:#94a3b8;">Flask Version</span><span>3.x</span>
 </div>
 <div style="display:flex;justify-content:space-between;padding:12px;background:#0f172a;border-radius:10px;">
-<span style="color:#94a3b8;">Python Version</span><span>3.10</span>
+<span style="color:#94a3b8;">Python Version</span><span>3.10+</span>
 </div>
 <div style="display:flex;justify-content:space-between;padding:12px;background:#0f172a;border-radius:10px;">
-<span style="color:#94a3b8;">Data Store</span><span>In-memory (demo)</span>
+<span style="color:#94a3b8;">Data Store</span><span>SQLite (persisted)</span>
 </div>
 <div style="display:flex;justify-content:space-between;padding:12px;background:#0f172a;border-radius:10px;">
-<span style="color:#94a3b8;">Phase</span><span>1 — Prototype</span>
+<span style="color:#94a3b8;">Contract Mode</span><span id="settingsContractMode">checking...</span>
 </div>
 </div>
 </div>
@@ -373,7 +414,68 @@ button.secondary{background:transparent;border:1px solid #1e293b;padding:10px 20
 
 </div><!-- end .main -->
 
+<!-- Toast -->
+<div id="toast"></div>
+
 <script>
+
+// ===== TOAST =====
+
+function showToast(msg, type) {
+  const el = document.getElementById("toast")
+  el.textContent = msg
+  el.className = type || ""
+  el.style.display = "block"
+  setTimeout(() => { el.style.display = "none" }, 4000)
+}
+
+// ===== AUTH =====
+
+async function checkAuth() {
+  try {
+    const res = await fetch("/api/auth/status")
+    const data = await res.json()
+    if (data.authenticated) {
+      document.getElementById("loginOverlay").style.display = "none"
+      loadDashboard()
+      loadChart()
+      checkContractStatus()
+    }
+  } catch (e) {
+    // If the API is unreachable, hide overlay so user sees the error naturally
+    document.getElementById("loginOverlay").style.display = "none"
+  }
+}
+
+async function doLogin() {
+  const password = document.getElementById("loginPassword").value
+  const errEl = document.getElementById("loginError")
+  errEl.textContent = ""
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({password})
+    })
+    const data = await res.json()
+    if (data.success) {
+      document.getElementById("loginOverlay").style.display = "none"
+      loadDashboard()
+      loadChart()
+      checkContractStatus()
+    } else {
+      errEl.textContent = data.error || "Invalid password"
+    }
+  } catch (e) {
+    errEl.textContent = "Connection error. Is the server running?"
+  }
+}
+
+async function doLogout() {
+  await fetch("/api/auth/logout", {method: "POST"})
+  document.getElementById("loginOverlay").style.display = "flex"
+  document.getElementById("loginPassword").value = ""
+}
 
 // ===== NAVIGATION =====
 
@@ -393,203 +495,424 @@ function navigate(section) {
   document.querySelectorAll(".nav a").forEach(a => a.classList.remove("active"))
   document.getElementById("sec-" + section).classList.add("active")
   document.querySelector(`.nav a[data-section="${section}"]`).classList.add("active")
-  document.getElementById("pageTitle").innerText = pageTitles[section]
+  document.getElementById("pageTitle").textContent = pageTitles[section]
 
   if(section === "dashboard")    { loadDashboard(); loadChart(); }
   if(section === "policies")     { loadPoliciesTable(); }
   if(section === "payments")     { loadPaymentsTable(); }
   if(section === "transactions") { loadFullTxTable(); }
   if(section === "analytics")    { loadAnalytics(); loadTokenPrices(); }
-  if(section === "wallets")      { updateWalletPanel(); }
+  if(section === "wallets")      { refreshWalletPanel(); }
+  if(section === "settings")     { checkContractStatus(); }
+}
+
+// ===== CONTRACT STATUS =====
+
+async function checkContractStatus() {
+  try {
+    const res = await fetch("/api/contract/status")
+    const data = await res.json()
+    const el = document.getElementById("contractStatus")
+    el.textContent = data.mode === "live" ? "Contract: live" : "Contract: demo"
+    const settingsEl = document.getElementById("settingsContractMode")
+    if (settingsEl) settingsEl.textContent = data.mode
+  } catch (e) {
+    // ignore
+  }
+}
+
+// ===== SAFE DOM HELPERS =====
+
+function safeTd(text, opts) {
+  const td = document.createElement("td")
+  if (opts && opts.mono) { td.style.fontFamily = "monospace"; td.style.fontSize = "12px" }
+  td.textContent = text
+  return td
+}
+
+function txRow(tx) {
+  const tr = document.createElement("tr")
+  tr.appendChild(safeTd(tx.id, {mono: true}))
+  tr.appendChild(safeTd(tx.recipient))
+  tr.appendChild(safeTd(tx.policy))
+  tr.appendChild(safeTd("$" + Number(tx.amount).toLocaleString()))
+
+  const statusTd = document.createElement("td")
+  const badge = document.createElement("span")
+  badge.className = "badge " + (tx.status || "").toLowerCase()
+  badge.textContent = tx.status
+  statusTd.appendChild(badge)
+  tr.appendChild(statusTd)
+
+  tr.appendChild(safeTd(tx.hash, {mono: true}))
+  return tr
+}
+
+function appendTxRows(tbodyId, transactions) {
+  const tbody = document.getElementById(tbodyId)
+  tbody.innerHTML = ""
+  if (!transactions || transactions.length === 0) {
+    const tr = document.createElement("tr")
+    const td = document.createElement("td")
+    td.colSpan = 6
+    td.style.color = "#475569"
+    td.style.textAlign = "center"
+    td.style.padding = "20px"
+    td.textContent = "No transactions yet"
+    tr.appendChild(td)
+    tbody.appendChild(tr)
+    return
+  }
+  transactions.forEach(tx => tbody.appendChild(txRow(tx)))
 }
 
 // ===== DATA LOADERS =====
 
 async function loadDashboard() {
-  const res  = await fetch("/api/dashboard")
-  const data = await res.json()
+  try {
+    const res = await fetch("/api/dashboard")
+    if (res.status === 401) { return }
+    if (!res.ok) throw new Error("HTTP " + res.status)
+    const data = await res.json()
 
-  document.getElementById("policyCount").innerText  = data.kpi.policies
-  document.getElementById("paymentCount").innerText = data.kpi.payments
-  document.getElementById("volumeValue").innerText  = "$" + data.kpi.volume.toLocaleString()
-  document.getElementById("approvalRate").innerText = data.kpi.approval_rate + "%"
+    document.getElementById("policyCount").textContent  = data.kpi.policies
+    document.getElementById("paymentCount").textContent = data.kpi.payments
+    document.getElementById("volumeValue").textContent  = "$" + data.kpi.volume.toLocaleString()
+    document.getElementById("approvalRate").textContent = data.kpi.approval_rate + "%"
 
-  updateWalletStatus(data.wallet)
+    updateWalletStatus(data.wallet)
+    appendTxRows("txTableDash", (data.transactions || []).slice(0, 5))
 
-  const tbody = document.getElementById("txTableDash")
-  tbody.innerHTML = data.transactions.length
-    ? data.transactions.slice(0,5).map(txRow).join("")
-    : `<tr><td colspan="6" style="color:#475569;text-align:center;padding:20px;">No transactions yet</td></tr>`
-
-  const al = document.getElementById("activityList")
-  al.innerHTML = data.activity.length
-    ? data.activity.map(a => `<div class="activity"><div>${a.action} — <span style="color:#94a3b8;">${a.text}</span></div><div style="color:#64748b;font-size:12px;">${a.time}</div></div>`).join("")
-    : `<div style="color:#475569;text-align:center;padding:20px;">No activity yet</div>`
+    const al = document.getElementById("activityList")
+    al.innerHTML = ""
+    if (data.activity && data.activity.length > 0) {
+      data.activity.forEach(a => {
+        const div = document.createElement("div")
+        div.className = "activity"
+        const left = document.createElement("div")
+        const actionSpan = document.createElement("strong")
+        actionSpan.textContent = a.action
+        const sep = document.createTextNode(" — ")
+        const textSpan = document.createElement("span")
+        textSpan.style.color = "#94a3b8"
+        textSpan.textContent = a.text
+        left.appendChild(actionSpan)
+        left.appendChild(sep)
+        left.appendChild(textSpan)
+        const right = document.createElement("div")
+        right.style.color = "#64748b"
+        right.style.fontSize = "12px"
+        right.textContent = a.time
+        div.appendChild(left)
+        div.appendChild(right)
+        al.appendChild(div)
+      })
+    } else {
+      al.textContent = "No activity yet"
+      al.style.color = "#475569"
+      al.style.textAlign = "center"
+      al.style.padding = "20px"
+    }
+  } catch (e) {
+    showToast("Failed to load dashboard: " + e.message, "error")
+  }
 }
 
 async function loadChart() {
-  const res  = await fetch("/api/charts/payments")
-  const data = await res.json()
-  renderBars("chart", data)
+  try {
+    const res = await fetch("/api/charts/payments")
+    const data = await res.json()
+    renderBars("chart", data)
+  } catch (e) {
+    document.getElementById("chart").textContent = "Chart unavailable"
+  }
 }
 
 async function loadAnalytics() {
-  const res  = await fetch("/api/dashboard")
-  const data = await res.json()
-  const txs  = data.transactions
+  try {
+    const res = await fetch("/api/dashboard")
+    if (!res.ok) throw new Error("HTTP " + res.status)
+    const data = await res.json()
+    const txs = data.transactions || []
 
-  document.getElementById("analyticsVolume").innerText   = "$" + data.kpi.volume.toLocaleString()
-  document.getElementById("analyticsApproval").innerText = data.kpi.approval_rate + "%"
-  document.getElementById("analyticsPolicies").innerText = data.kpi.policies
+    document.getElementById("analyticsVolume").textContent   = "$" + data.kpi.volume.toLocaleString()
+    document.getElementById("analyticsApproval").textContent = data.kpi.approval_rate + "%"
+    document.getElementById("analyticsPolicies").textContent = data.kpi.policies
 
-  const avg = txs.length ? Math.round(txs.reduce((s,t)=>s+t.amount,0)/txs.length) : 0
-  document.getElementById("analyticsAvg").innerText = "$" + avg.toLocaleString()
+    const avg = txs.length ? Math.round(txs.reduce((s, t) => s + t.amount, 0) / txs.length) : 0
+    document.getElementById("analyticsAvg").textContent = "$" + avg.toLocaleString()
 
-  const chartRes  = await fetch("/api/charts/payments")
-  const chartData = await chartRes.json()
-  renderBars("analyticsChart", chartData)
+    const chartRes = await fetch("/api/charts/payments")
+    const chartData = await chartRes.json()
+    renderBars("analyticsChart", chartData)
 
-  const completed = txs.filter(t=>t.status==="Completed").length
-  const pending   = txs.filter(t=>t.status==="Pending").length
-  const declined  = txs.filter(t=>t.status==="Declined").length
-  document.getElementById("statusBreakdown").innerHTML = `
-    <div style="display:flex;gap:16px;flex-wrap:wrap;">
-      <div style="flex:1;min-width:120px;background:#0f172a;border-radius:12px;padding:16px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:#10b981;">${completed}</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Completed</div>
-      </div>
-      <div style="flex:1;min-width:120px;background:#0f172a;border-radius:12px;padding:16px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:#f59e0b;">${pending}</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Pending</div>
-      </div>
-      <div style="flex:1;min-width:120px;background:#0f172a;border-radius:12px;padding:16px;text-align:center;">
-        <div style="font-size:28px;font-weight:700;color:#ef4444;">${declined}</div>
-        <div style="font-size:12px;color:#94a3b8;margin-top:4px;">Declined</div>
-      </div>
-    </div>`
+    const completed = txs.filter(t => t.status === "Completed").length
+    const pending   = txs.filter(t => t.status === "Pending").length
+    const declined  = txs.filter(t => t.status === "Declined").length
+
+    const bd = document.getElementById("statusBreakdown")
+    bd.innerHTML = ""
+    const wrapper = document.createElement("div")
+    wrapper.style.cssText = "display:flex;gap:16px;flex-wrap:wrap;"
+
+    [[completed, "#10b981", "Completed"], [pending, "#f59e0b", "Pending"], [declined, "#ef4444", "Declined"]].forEach(([count, color, label]) => {
+      const card = document.createElement("div")
+      card.style.cssText = "flex:1;min-width:120px;background:#0f172a;border-radius:12px;padding:16px;text-align:center;"
+      const num = document.createElement("div")
+      num.style.cssText = "font-size:28px;font-weight:700;color:" + color
+      num.textContent = count
+      const lbl = document.createElement("div")
+      lbl.style.cssText = "font-size:12px;color:#94a3b8;margin-top:4px;"
+      lbl.textContent = label
+      card.appendChild(num)
+      card.appendChild(lbl)
+      wrapper.appendChild(card)
+    })
+    bd.appendChild(wrapper)
+  } catch (e) {
+    showToast("Failed to load analytics: " + e.message, "error")
+  }
 }
 
 async function loadPoliciesTable() {
-  const res  = await fetch("/api/dashboard")
-  const data = await res.json()
+  try {
+    const res = await fetch("/api/policies")
+    if (!res.ok) throw new Error("HTTP " + res.status)
+    const policies = await res.json()
 
-  // policies are tracked in the store but not yet returned in /api/dashboard
-  // re-use transactions as a proxy for now; policies come back via KPI
-  document.getElementById("policyTable").innerHTML = ""
-  document.getElementById("policyTableEmpty").style.display = data.kpi.policies === 0 ? "block" : "none"
+    const tbody = document.getElementById("policyTable")
+    tbody.innerHTML = ""
+    const empty = document.getElementById("policyTableEmpty")
+
+    if (!policies || policies.length === 0) {
+      empty.style.display = "block"
+      return
+    }
+    empty.style.display = "none"
+    policies.forEach(p => {
+      const tr = document.createElement("tr")
+      const fields = [
+        {text: p.id, mono: true},
+        {text: p.agent, mono: true},
+        {text: p.token},
+        {text: "$" + Number(p.budget).toLocaleString()},
+        {text: p.purpose},
+        {text: p.tx_hash, mono: true},
+      ]
+      fields.forEach(f => {
+        const td = document.createElement("td")
+        td.textContent = f.text
+        if (f.mono) { td.style.fontFamily = "monospace"; td.style.fontSize = "12px" }
+        tr.appendChild(td)
+      })
+      tbody.appendChild(tr)
+    })
+  } catch (e) {
+    showToast("Failed to load policies: " + e.message, "error")
+  }
 }
 
 async function loadPaymentsTable() {
-  const res  = await fetch("/api/dashboard")
-  const data = await res.json()
-  const tbody = document.getElementById("txTablePayments")
-  tbody.innerHTML = data.transactions.length
-    ? data.transactions.map(txRow).join("")
-    : `<tr><td colspan="6" style="color:#475569;text-align:center;padding:20px;">No payments yet</td></tr>`
+  try {
+    const res = await fetch("/api/dashboard")
+    if (!res.ok) throw new Error("HTTP " + res.status)
+    const data = await res.json()
+    appendTxRows("txTablePayments", data.transactions || [])
+  } catch (e) {
+    showToast("Failed to load payments: " + e.message, "error")
+  }
 }
 
 async function loadFullTxTable() {
-  const res  = await fetch("/api/dashboard")
-  const data = await res.json()
-  const tbody = document.getElementById("txTableFull")
-  const empty = document.getElementById("txEmpty")
-  if(data.transactions.length) {
-    tbody.innerHTML = data.transactions.map(txRow).join("")
-    empty.style.display = "none"
-  } else {
-    tbody.innerHTML = ""
-    empty.style.display = "block"
+  try {
+    const res = await fetch("/api/dashboard")
+    if (!res.ok) throw new Error("HTTP " + res.status)
+    const data = await res.json()
+    const txs = data.transactions || []
+    const empty = document.getElementById("txEmpty")
+    if (txs.length === 0) {
+      document.getElementById("txTableFull").innerHTML = ""
+      empty.style.display = "block"
+    } else {
+      empty.style.display = "none"
+      appendTxRows("txTableFull", txs)
+    }
+  } catch (e) {
+    showToast("Failed to load transactions: " + e.message, "error")
   }
 }
 
 function renderBars(containerId, data) {
-  const max = Math.max(...data.map(d=>d.value))
-  document.getElementById(containerId).innerHTML = data.map(d=>`
-    <div style="text-align:center;flex:1;">
-      <div class="bar" style="height:${Math.round(d.value/max*180)}px"></div>
-      <div class="bar-label">${d.day}</div>
-    </div>`).join("")
-}
-
-function txRow(tx) {
-  return `<tr>
-    <td>${tx.id}</td>
-    <td>${tx.recipient}</td>
-    <td>${tx.policy}</td>
-    <td>$${tx.amount.toLocaleString()}</td>
-    <td><span class="badge ${tx.status.toLowerCase()}">${tx.status}</span></td>
-    <td style="font-family:monospace;font-size:12px;">${tx.hash}</td>
-  </tr>`
+  const el = document.getElementById(containerId)
+  el.innerHTML = ""
+  const max = Math.max(...data.map(d => d.value))
+  data.forEach(d => {
+    const wrap = document.createElement("div")
+    wrap.style.cssText = "text-align:center;flex:1;"
+    const bar = document.createElement("div")
+    bar.className = "bar"
+    bar.style.height = Math.round(d.value / max * 180) + "px"
+    const lbl = document.createElement("div")
+    lbl.className = "bar-label"
+    lbl.textContent = d.day
+    wrap.appendChild(bar)
+    wrap.appendChild(lbl)
+    el.appendChild(wrap)
+  })
 }
 
 // ===== WALLET =====
 
 async function connectWallet() {
-  const res  = await fetch("/api/wallet/connect", {method:"POST"})
-  const data = await res.json()
-  updateWalletStatus(data)
-  updateWalletPanel(data)
-  loadDashboard()
+  const address = (document.getElementById("f_walletAddress").value || "").trim()
+  const errEl = document.getElementById("walletError")
+  const btn = document.getElementById("connectWalletBtn")
+  errEl.textContent = ""
+  btn.disabled = true
+  btn.innerHTML = '<span class="spinner"></span>Connecting...'
+
+  try {
+    const res = await fetch("/api/wallet/connect", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({address})
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      errEl.textContent = data.error || "Connection failed"
+    } else {
+      updateWalletStatus(data)
+      updateWalletPanel(data)
+      showToast("Wallet connected: " + data.address, "success")
+      loadDashboard()
+    }
+  } catch (e) {
+    errEl.textContent = "Network error: " + e.message
+  } finally {
+    btn.disabled = false
+    btn.textContent = "Connect"
+  }
 }
 
 function updateWalletStatus(wallet) {
   const el = document.getElementById("walletStatus")
-  el.innerText = wallet && wallet.connected ? "Wallet " + wallet.address : "Wallet not connected"
+  if (!el) return
+  el.textContent = wallet && wallet.connected ? "Wallet " + wallet.address : "Wallet not connected"
 }
 
 function updateWalletPanel(wallet) {
-  if(!wallet) return
-  if(wallet.connected) {
-    document.getElementById("walletAddress").innerText    = wallet.address
-    document.getElementById("walletConnState").innerText  = "Connected and ready"
-    document.getElementById("walletConnState").style.color = "#10b981"
+  if (!wallet) return
+  if (wallet.connected) {
+    document.getElementById("walletAddress").textContent   = wallet.address
+    const st = document.getElementById("walletConnState")
+    st.textContent  = "Connected and ready"
+    st.style.color  = "#10b981"
   }
+}
+
+async function refreshWalletPanel() {
+  try {
+    const res = await fetch("/api/dashboard")
+    const data = await res.json()
+    updateWalletPanel(data.wallet)
+  } catch (e) { /* ignore */ }
 }
 
 // ===== POLICIES =====
 
 async function createPolicy() {
-  const payload = {
-    agent:       document.getElementById("f_agent").value,
-    token:       document.getElementById("f_token").value,
-    totalBudget: document.getElementById("f_budget").value,
-    perTxLimit:  document.getElementById("f_perTx").value,
-    validFrom:   document.getElementById("f_validFrom").value || "0",
-    validUntil:  document.getElementById("f_validUntil").value || "0",
-    purpose:     document.getElementById("f_purpose").value
+  const agent   = document.getElementById("f_agent").value.trim()
+  const token   = document.getElementById("f_token").value
+  const budget  = document.getElementById("f_budget").value
+  const perTx   = document.getElementById("f_perTx").value
+  const purpose = document.getElementById("f_purpose").value.trim()
+
+  if (!agent || !budget || !perTx || !purpose) {
+    showToast("Please fill in all required fields.", "error")
+    return
+  }
+  if (Number(budget) <= 0 || Number(perTx) <= 0) {
+    showToast("Budget and per-tx limit must be positive numbers.", "error")
+    return
   }
 
-  const res  = await fetch("/api/policies", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)})
-  const data = await res.json()
+  const btn = document.getElementById("createPolicyBtn")
+  btn.disabled = true
+  btn.innerHTML = '<span class="spinner"></span>Deploying...'
+  document.getElementById("policyResult").textContent = ""
 
-  document.getElementById("policyResult").innerText = `Policy ${data.policyId} deployed (tx: ${data.txHash})`
+  const payload = {
+    agent,
+    token,
+    totalBudget: Number(budget),
+    perTxLimit:  Number(perTx),
+    validFrom:   Number(document.getElementById("f_validFrom").value) || 0,
+    validUntil:  Number(document.getElementById("f_validUntil").value) || 0,
+    purpose
+  }
 
-  // Add to policies table immediately
-  const tbody = document.getElementById("policyTable")
-  tbody.innerHTML += `<tr>
-    <td style="font-family:monospace;">${data.policyId}</td>
-    <td style="font-family:monospace;font-size:12px;">${payload.agent}</td>
-    <td>${payload.token}</td>
-    <td>$${Number(payload.totalBudget).toLocaleString()}</td>
-    <td>${payload.purpose}</td>
-    <td style="font-family:monospace;font-size:12px;">${data.txHash}</td>
-  </tr>`
-  document.getElementById("policyTableEmpty").style.display = "none"
+  try {
+    const res = await fetch("/api/policies", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify(payload)
+    })
+    const data = await res.json()
+
+    if (!res.ok) {
+      const msg = data.fields ? Object.entries(data.fields).map(([k,v]) => `${k}: ${v}`).join("; ") : data.error
+      showToast("Error: " + msg, "error")
+      return
+    }
+
+    const resultEl = document.getElementById("policyResult")
+    resultEl.textContent = `Policy ${data.policyId} deployed (tx: ${data.txHash})`
+    showToast("Policy " + data.policyId + " deployed!", "success")
+    loadPoliciesTable()
+  } catch (e) {
+    showToast("Network error: " + e.message, "error")
+  } finally {
+    btn.disabled = false
+    btn.textContent = "Deploy Policy"
+  }
 }
 
 // ===== PAYMENTS =====
 
 async function generateIntent() {
-  const task = document.getElementById("f_task").value
-  if(!task) return
+  const task = (document.getElementById("f_task").value || "").trim()
+  if (!task) {
+    showToast("Please enter a payment task description.", "error")
+    return
+  }
 
-  const el = document.getElementById("intentResult")
+  const btn = document.getElementById("intentBtn")
+  const el  = document.getElementById("intentResult")
+  btn.disabled = true
+  btn.innerHTML = '<span class="spinner"></span>Generating...'
   el.style.display = "block"
-  el.innerText = "Generating..."
+  el.textContent = "Generating..."
 
-  const res  = await fetch("/api/payment-intent", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({task})})
-  const data = await res.json()
-  el.innerText = JSON.stringify(data, null, 2)
+  try {
+    const res = await fetch("/api/payment-intent", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({task})
+    })
+    const data = await res.json()
+    if (!res.ok) {
+      showToast("Error: " + (data.error || "Unknown error"), "error")
+      el.textContent = JSON.stringify(data, null, 2)
+    } else {
+      el.textContent = JSON.stringify(data, null, 2)
+    }
+  } catch (e) {
+    el.textContent = "Error: " + e.message
+    showToast("Network error: " + e.message, "error")
+  } finally {
+    btn.disabled = false
+    btn.textContent = "Generate Intent"
+  }
 }
 
 // ===== UNISWAP =====
@@ -600,45 +923,76 @@ async function loadTokenPrices() {
   try {
     const res  = await fetch("/api/token/prices")
     const data = await res.json()
-    container.innerHTML = Object.values(data).map(t => {
-      if(t.error) return `<div class="status-card"><div style="font-weight:600;">${t.symbol}</div><div style="color:#475569;font-size:12px;">Unavailable</div></div>`
-      const change = t.change24h ?? 0
-      const color  = change >= 0 ? "#10b981" : "#ef4444"
-      return `<div class="status-card" style="text-align:center;">
-        <div style="font-size:12px;color:#94a3b8;margin-bottom:4px;">${t.symbol}</div>
-        <div style="font-size:20px;font-weight:700;">$${t.priceUSD.toLocaleString()}</div>
-        <div style="font-size:12px;color:${color};margin-top:4px;">${change >= 0 ? "+" : ""}${change}% 24h</div>
-      </div>`
-    }).join("")
-  } catch(e) {
-    container.innerHTML = "<div style='color:#475569;'>Could not load prices</div>"
+    container.innerHTML = ""
+    Object.values(data).forEach(t => {
+      const card = document.createElement("div")
+      card.className = "status-card"
+      card.style.textAlign = "center"
+
+      if (t.error) {
+        const sym = document.createElement("div")
+        sym.style.fontWeight = "600"
+        sym.textContent = t.symbol || "?"
+        const err = document.createElement("div")
+        err.style.cssText = "color:#475569;font-size:12px;"
+        err.textContent = "Unavailable"
+        card.appendChild(sym)
+        card.appendChild(err)
+      } else {
+        const change = t.change24h ?? 0
+        const color  = change >= 0 ? "#10b981" : "#ef4444"
+        const sym = document.createElement("div")
+        sym.style.cssText = "font-size:12px;color:#94a3b8;margin-bottom:4px;"
+        sym.textContent = t.symbol
+        const price = document.createElement("div")
+        price.style.cssText = "font-size:20px;font-weight:700;"
+        price.textContent = "$" + Number(t.priceUSD).toLocaleString()
+        const chg = document.createElement("div")
+        chg.style.cssText = "font-size:12px;color:" + color + ";margin-top:4px;"
+        chg.textContent = (change >= 0 ? "+" : "") + change + "% 24h"
+        card.appendChild(sym)
+        card.appendChild(price)
+        card.appendChild(chg)
+      }
+      container.appendChild(card)
+    })
+  } catch (e) {
+    container.textContent = "Could not load prices"
   }
 }
 
 async function getSwapQuote() {
+  const amount = document.getElementById("q_amount").value
+  if (!amount || Number(amount) <= 0) {
+    showToast("Enter a positive amount.", "error")
+    return
+  }
   const payload = {
     tokenIn:   document.getElementById("q_tokenIn").value,
     tokenOut:  document.getElementById("q_tokenOut").value,
-    amountUSD: document.getElementById("q_amount").value
+    amountUSD: Number(amount)
   }
-  const res  = await fetch("/api/token/quote", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)})
-  const data = await res.json()
-  const el   = document.getElementById("swapQuoteResult")
-  el.style.display = "block"
-  if(data.error) {
-    el.innerHTML = `<span style="color:#ef4444;">${data.error}</span>`
-  } else {
-    el.innerHTML = `
-      <span style="color:#94a3b8;">Sending</span> <strong>${data.amountIn} ${data.tokenIn}</strong>
-      ($${data.amountUSD}) &rarr;
-      <span style="color:#94a3b8;">Receive</span> <strong>${data.amountOut} ${data.tokenOut}</strong>
-      &nbsp;&nbsp;<span style="color:#64748b;font-size:12px;">via Uniswap v3</span>`
+  try {
+    const res  = await fetch("/api/token/quote", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(payload)})
+    const data = await res.json()
+    const el   = document.getElementById("swapQuoteResult")
+    el.style.display = "block"
+    el.innerHTML = ""
+    if (data.error) {
+      const span = document.createElement("span")
+      span.style.color = "#ef4444"
+      span.textContent = data.error
+      el.appendChild(span)
+    } else {
+      el.textContent = `Sending ${data.amountIn} ${data.tokenIn} ($${data.amountUSD}) → Receive ${data.amountOut} ${data.tokenOut}  via Uniswap v3`
+    }
+  } catch (e) {
+    showToast("Swap quote failed: " + e.message, "error")
   }
 }
 
 // ===== INIT =====
-loadDashboard()
-loadChart()
+checkAuth()
 
 </script>
 
