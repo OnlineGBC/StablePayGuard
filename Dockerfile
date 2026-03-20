@@ -9,6 +9,7 @@ COPY . .
 
 # Cloud Run injects PORT at runtime (default 8080)
 ENV PORT=8080
+ENV PYTHONPATH=/app/app
 
 EXPOSE 8080
 
