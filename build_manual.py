@@ -211,7 +211,7 @@ add_heading(doc, '3. Where the Code Lives', level=1)
 
 add_heading(doc, 'Local Machine', level=2)
 add_paragraph(doc, 'The source code lives at:')
-add_code(doc, 'C:\\Users\\raja\\CodexPayRailsAgent\\')
+add_code(doc, 'C:\\Users\\raja\\StablePayGuard\\')
 add_paragraph(doc, 'This is a Git repository. All code changes are committed and pushed from here.')
 
 add_heading(doc, 'GitHub', level=2)
@@ -627,7 +627,7 @@ add_heading(doc, '15. Codebase Overview', level=1)
 
 add_heading(doc, '15.1 Directory Structure', level=2)
 add_code(doc, """\
-CryptoPayRailsAgent/
+StablePayGuard/
 ├── app/
 │   ├── app.py                  Flask app entry point, dashboard API, blueprint registration
 │   ├── models.py               SQLAlchemy database models
