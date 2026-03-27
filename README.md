@@ -8,470 +8,261 @@
 
 **Intelligent Spend Management for the AI-Driven Enterprise**
 
-------------------------------------------------------------------------
+StablePayGuard replaces manual Accounts Payable workflows with AI agents that execute payments automatically within policy guardrails enforced on-chain. Finance teams set the rules once; agents handle the rest.
 
-## What Is This?
+---
 
-Most companies still manage Accounts Payable the same way they did 20 years ago — a human reviews every invoice, approves every payment, and chases down every exception. It's slow, error-prone, and doesn't scale.
+## Live App
 
-**StablePayGuard** replaces that bottleneck with AI agents that handle routine payments automatically — while giving finance and operations teams a real-time control room to set the rules, monitor activity, and stay in control.
+**URL:** https://stablepayguard-684704256193.us-east1.run.app
+**Login:** password stored in Google Secret Manager (`ADMIN_PASSWORD`)
 
-Think of it as a **corporate AP department where AI does the routine work and humans set the guardrails.**
+---
 
-------------------------------------------------------------------------
+## Prerequisites
 
-## Who It's For
-
-- **Finance & AP Teams** who want to automate vendor payments, contractor disbursements, and recurring software subscriptions without losing oversight
-- **CFOs & Controllers** who need real-time visibility into what's being spent, by whom, and against what budget
-- **Engineering & Operations Teams** managing cloud infrastructure spend across multiple providers
-- **Startups & Scale-ups** building autonomous AI workflows that involve money movement
-
-------------------------------------------------------------------------
-
-## What It Does
-
-**Spending Policies** — Define exactly what an AI agent is allowed to spend. Set a total budget, a per-transaction limit, an allowed time window, and a stated purpose. The agent cannot spend outside those rules.
-
-**AI Payment Intent** — Describe a payment in plain English (*"Pay $200 to AWS for cloud hosting"*) and the system converts it into a structured, policy-validated payment instruction automatically.
-
-**Transaction Monitoring** — A live ledger of every payment — completed, pending, or rejected — with full audit trail including network hash.
-
-**Agent Registry** — Track which AI agents are active, how much of their budget has been consumed, and a full log of their actions.
-
-**Analytics** — Spending trends, approval rates, weekly volume, and transaction status breakdowns — all in one view.
-
-**Wallet & Settlement** — Connect a crypto wallet for on-chain policy deployment and settlement via Ethereum-compatible networks.
-
-------------------------------------------------------------------------
-
-## The Business Case
-
-| Traditional AP | StablePayGuard |
+| Requirement | Purpose |
 |---|---|
-| Manual invoice approval | AI agents execute within pre-approved policies |
-| Slow payment cycles | Payments execute instantly within policy rules |
-| Limited audit trail | Every transaction logged with network hash |
-| Reactive spend controls | Proactive policy enforcement before payment |
-| Siloed tools | Unified dashboard across agents, policies, and payments |
+| Python 3.10+ | Runtime |
+| Git | Clone repo |
+| `.env` file | Secrets for local dev (see below) |
+| PostgreSQL *(optional)* | Production-grade DB; SQLite used automatically if not set |
+| Docker Desktop *(optional)* | Easiest way to run PostgreSQL locally |
+| gcloud CLI *(optional)* | Cloud Run deployment only |
 
-------------------------------------------------------------------------
+---
 
-## Quick Start
+## Local Setup — Minimal (SQLite, no Docker)
+
+Runs immediately with no database infrastructure. SQLite is used automatically when `DATABASE_URL` is not set.
 
 ```bash
+git clone https://github.com/OnlineGBC/StablePayGuard.git
+cd StablePayGuard
 pip install -r requirements.txt
+cp .env.example .env        # fill in your API keys — comment out DATABASE_URL for SQLite mode
 python app/app.py
 ```
 
-Open **http://localhost:5000**
+Open **http://localhost:5000** and log in with your `ADMIN_PASSWORD`.
 
-------------------------------------------------------------------------
+---
 
-------------------------------------------------------------------------
+## Local Setup — Full Stack (PostgreSQL via Docker)
 
-# Quick Start
-
-``` bash
-pip install -r requirements.txt
-python app.py
+```bash
+git clone https://github.com/OnlineGBC/StablePayGuard.git
+cd StablePayGuard
+cp .env.example .env        # fill in your API keys
+docker compose up           # starts PostgreSQL + Flask app together on port 5000
 ```
 
-Open:
+To run only the database container and the app natively:
 
-    http://localhost:5000
-
-------------------------------------------------------------------------
-
-# System Architecture
-
-    Browser (HTML + CSS + JS)
-            │
-            │ REST API calls
-            ▼
-    Flask Backend (Python)
-            │
-            │ In‑memory datastore (current)
-            ▼
-    Policies / Transactions / Activity / Wallet
-
-Future production architecture:
-
-    User Browser
-         │
-         ▼
-    NGINX / API Gateway
-         │
-         ▼
-    Flask API (Gunicorn)
-         │
-         ▼
-    PostgreSQL
-         │
-         ▼
-    Payment Rail / Blockchain / Bank APIs
-
-------------------------------------------------------------------------
-
-# Architecture Diagram
-
-                    ┌──────────────────────────────┐
-                    │          Browser UI          │
-                    │     HTML / CSS / JS SPA      │
-                    └──────────────┬───────────────┘
-                                   │
-                                   │ REST API
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │         Flask Backend        │
-                    │      API + Policy Engine     │
-                    └──────────────┬───────────────┘
-                                   │
-                                   │ Data Layer
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │       Data Store Layer       │
-                    │ Policies / Transactions      │
-                    │ Activity / Wallet State      │
-                    └──────────────┬───────────────┘
-                                   │
-                                   │ Future
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │         PostgreSQL           │
-                    │      Persistent Storage      │
-                    └──────────────────────────────┘
-
-------------------------------------------------------------------------
-
-# Project Structure
-
-    StablePayGuard/
-
-    ├── app.py
-    ├── templates/
-    │   └── dashboard.html
-    ├── static/
-    │   └── (future JS / CSS separation)
-    ├── requirements.txt
-    ├── CONTRIBUTING.md
-    ├── ARCHITECTURE.md
-    └── README.md
-
-------------------------------------------------------------------------
-
-# Dashboard Components
-
-## Sidebar Navigation
-
-    Dashboard
-    Policies
-    Payments
-    Agents
-    Transactions
-    Analytics
-    Wallets
-    Settings
-
-------------------------------------------------------------------------
-
-## KPI Cards
-
-  Metric              Description
-  ------------------- -------------------------------------
-  Policies Created    Number of policies created
-  Payments Executed   Total payments processed
-  Monthly Volume      Aggregate transaction value
-  Approval Rate       Percentage of approved transactions
-
-Data source:
-
-    GET /api/dashboard
-
-------------------------------------------------------------------------
-
-## Payments Chart
-
-Displays weekly transaction volume.
-
-Example:
-
-    Mon $4200
-    Tue $5500
-    Wed $6100
-    Thu $4800
-    Fri $7200
-    Sat $6300
-    Sun $7000
-
-Endpoint:
-
-    GET /api/charts/payments
-
-------------------------------------------------------------------------
-
-## Transaction Table
-
-Columns:
-
-    Transaction ID
-    Recipient
-    Policy ID
-    Amount
-    Status
-    Network Hash
-
-Statuses:
-
-    Completed
-    Pending
-    Declined
-
-------------------------------------------------------------------------
-
-## Activity Feed
-
-Displays recent system events:
-
-    Policy created
-    Wallet connected
-    Payment executed
-    Payment rejected
-
-------------------------------------------------------------------------
-
-# API Reference
-
-  Endpoint                 Method   Description
-  ------------------------ -------- ------------------------------------
-  `/api/dashboard`         GET      Returns dashboard metrics and data
-  `/api/policies`          POST     Creates a new payment policy
-  `/api/wallet/connect`    POST     Simulates wallet connection
-  `/api/charts/payments`   GET      Returns chart data
-
-Example response:
-
-``` json
-{
-  "kpi": {
-    "policies": 3,
-    "payments": 18,
-    "volume": 42800,
-    "approval_rate": 96.2
-  },
-  "transactions": [],
-  "activity": [],
-  "wallet": {}
-}
+```bash
+docker compose up db -d     # PostgreSQL in background
+python app/app.py           # Flask against it
 ```
 
-------------------------------------------------------------------------
+---
 
-# Local Development Setup
+## Environment Variables
 
-Clone repository
+Copy `.env.example` to `.env` and fill in the values. On Cloud Run, all secrets are stored in Google Secret Manager — not in `.env`.
 
-    git clone https://github.com/yourrepo/stablepayguard.git
-    cd StablePayGuard
+| Variable | Required locally | Description |
+|---|---|---|
+| `DATABASE_URL` | No | PostgreSQL connection string. Omit or comment out for SQLite. |
+| `SECRET_KEY` | Yes (prod) | Flask session signing key — any long random string. |
+| `ADMIN_PASSWORD` | Yes | Dashboard login password. |
+| `SYNTH_API_KEY` | Recommended | Anthropic API key for AI payment intent parsing (primary provider). |
+| `OPENAI_API_KEY` | Optional | OpenAI key — fallback if Anthropic unavailable. |
+| `RPC_URL` | Optional | Infura/Alchemy Sepolia RPC endpoint for on-chain policy enforcement. |
+| `PRIVATE_KEY` | Optional | Ethereum wallet private key for signing on-chain transactions. |
+| `POLICY_CONTRACT` | Optional | Deployed `PolicyManager.sol` address on Sepolia. |
+| `OWNER_WALLET` | Optional | Ethereum wallet address of the contract owner. |
+| `FLASK_ENV` | Optional | Set to `development` for debug logging. |
+| `PORT` | Optional | HTTP port (default `5000` locally, `8080` on Cloud Run). |
 
-Create Python environment
+If `RPC_URL` and `POLICY_CONTRACT` are not set, the app runs in **demo mode** — all blockchain operations are simulated with placeholder hashes. The dashboard, policies, payments, and AI parsing all work identically in demo mode.
 
-    python -m venv venv
+---
 
-Activate
+## Running Tests
 
-Windows
+Unit tests (no database required):
 
-    venv\Scripts\activate
+```bash
+python -m pytest tests/test_validation.py tests/test_agent_service.py tests/test_policy_service.py -v
+```
 
-Mac/Linux
+Full suite (requires PostgreSQL — CI spins one up automatically):
 
-    source venv/bin/activate
+```bash
+python -m pytest tests/ -v
+```
 
-Install dependencies
+---
 
-    pip install -r requirements.txt
+## API Reference
 
-Run server
+### Auth
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/login` | — | Login with `{"password": "..."}` |
+| POST | `/api/auth/logout` | — | Clear session |
+| GET | `/api/auth/status` | — | Returns `{"authenticated": bool}` |
 
-    python app.py
+### Dashboard
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/dashboard` | — | KPIs, recent transactions, activity feed, wallet state, policies with remaining budgets |
+| GET | `/api/charts/payments` | — | Last 7 days of completed payment volume grouped by day of week |
+| GET | `/api/contract/status` | — | Web3 connection and contract load status |
 
-------------------------------------------------------------------------
+### Policies
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/policies` | — | List all policies |
+| POST | `/api/policies` | ✓ | Create policy: `agent`, `token`, `totalBudget`, `perTxLimit`, `purpose` |
+| GET | `/api/policies/<id>` | — | Policy detail — live from contract if connected, DB otherwise |
+| POST | `/api/policies/<id>/deactivate` | ✓ | Deactivate policy on-chain (or demo mode fallback) |
 
-# Environment Variables
+### Payments & Transactions
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/payment-intent` | ✓ | Parse plain-English task into structured payment JSON via AI |
+| POST | `/api/payment` | ✓ | Execute payment: `policy_id`, `recipient`, `amount`, `purpose` |
+| GET | `/api/transactions` | — | Transaction ledger with filters: `?status=`, `?policy=`, `?limit=`, `?offset=` |
 
-Create `.env`
+### Tokens
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| GET | `/api/token/price/<symbol>` | — | Live USD price — ETH, USDC, DAI, USDT, WBTC (60s cache) |
+| POST | `/api/token/quote` | — | Swap quote: `tokenIn`, `tokenOut`, `amountUSD` |
+| GET | `/api/token/prices` | — | All five token prices in one call |
 
-    OPENAI_API_KEY=your_key
-    FLASK_ENV=development
-    APP_PORT=5000
+### Wallet
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| POST | `/api/wallet/connect` | ✓ | Connect wallet: `{"address": "0x..."}` or omit for owner wallet |
 
-Future configuration
+---
 
-    DATABASE_URL=postgres://...
-    RPC_URL=https://eth-mainnet...
-    WALLET_PRIVATE_KEY=...
+## Project Structure
 
-------------------------------------------------------------------------
+```
+StablePayGuard/
+├── app/
+│   ├── app.py                   # Flask entry point, dashboard + chart routes
+│   ├── models.py                # SQLAlchemy ORM models (Policy, Transaction, ActivityLog, PaymentIntent, WalletState)
+│   ├── schemas.py               # Pydantic request validation schemas
+│   ├── store.py                 # DB helper functions and seed data
+│   ├── extensions.py            # Flask-Limiter setup
+│   ├── utils.py                 # login_required decorator, validate_request helper
+│   ├── secrets.py               # Secret loader: GCP Secret Manager on Cloud Run, .env locally
+│   ├── routes/
+│   │   ├── auth.py              # Login / logout / status
+│   │   ├── policies.py          # Policy CRUD + deactivation
+│   │   ├── payments.py          # Payment intent parsing, execution, transaction listing
+│   │   ├── uniswap.py           # Token price and swap quote
+│   │   └── wallet.py            # Wallet connection
+│   ├── services/
+│   │   ├── agent_service.py     # AI payment intent parsing (Anthropic → OpenAI → demo)
+│   │   ├── policy_service.py    # On-chain policy creation and deactivation
+│   │   ├── uniswap_service.py   # Uniswap v3 Subgraph price feeds with 60s cache
+│   │   └── web3_service.py      # Web3 connection and contract interface
+│   └── templates/
+│       └── dashboard.html       # Single-page dashboard UI
+├── contracts/
+│   ├── src/PolicyManager.sol    # Solidity smart contract
+│   ├── abi/PolicyManager.json   # Contract ABI
+│   ├── audit/slither_report.md  # Slither security audit results
+│   └── deployment.json          # Deployed contract addresses
+├── tests/
+│   ├── test_api.py              # Integration tests (requires PostgreSQL)
+│   ├── test_agent_service.py    # AI service unit tests
+│   ├── test_policy_service.py   # Policy service unit tests
+│   └── test_validation.py       # Schema validation unit tests
+├── scripts/deploy.py            # Contract deployment script
+├── .github/workflows/
+│   ├── tests.yml                # CI: pytest on every push to app/ or tests/
+│   └── audit.yml                # CI: Slither audit on contract changes
+├── .env.example                 # Environment variable template
+├── Dockerfile                   # Cloud Run container (gunicorn)
+├── docker-compose.yml           # Local full-stack: app + PostgreSQL
+└── requirements.txt
+```
 
-# Docker Deployment
+---
 
-Example Dockerfile
+## Smart Contract
 
-    FROM python:3.10
-    WORKDIR /app
-    COPY . .
-    RUN pip install -r requirements.txt
-    EXPOSE 5000
-    CMD ["python","app.py"]
-
-Build container
-
-    docker build -t stablepayguard .
-
-Run container
-
-    docker run -p 5000:5000 stablepayguard
-
-------------------------------------------------------------------------
-
-# Screenshots
-
-Example dashboard contains:
-
--   KPI cards
--   payments chart
--   transaction table
--   activity feed
--   policy creation panel
-
-Suggested directory:
-
-    docs/screenshots/dashboard.png
-    docs/screenshots/policies.png
-    docs/screenshots/transactions.png
-
-------------------------------------------------------------------------
-
-# Smart Contract Security
-
-**PolicyManager.sol** — deployed to Sepolia testnet at
+**PolicyManager.sol** deployed to Sepolia testnet at
 `0x16229C14aAa18C7bC069f5b9092f5Af8884f3781`
 
-Static analysis with [Slither](https://github.com/crytic/slither) v0.11.5 (Solidity 0.8.28):
+Enforces spending rules on-chain: an AI agent cannot execute a payment that exceeds its policy budget, per-transaction limit, or validity window. The backend operates in demo mode when no RPC connection is configured — no contract interaction needed to use the dashboard.
 
-| Detector | Severity | Outcome |
-|----------|----------|---------|
-| `immutable-states` (owner) | Optimization | Fixed — owner declared `immutable` |
-| `solc-version` (^0.8.20) | Informational | Fixed — pragma pinned to `0.8.28` |
-| `block.timestamp` comparisons | Low | Accepted — validity windows are days/months |
-| High and Medium detectors (all 99 others) | High / Medium | None found |
+Security audit: [Slither v0.11.5](contracts/audit/slither_report.md) — **0 high, 0 medium findings.**
 
-Full report: [`contracts/audit/slither_report.md`](contracts/audit/slither_report.md)
+---
 
-CertiK SkyNet automated scan: in progress.
+## Cloud Run Deployment
 
-------------------------------------------------------------------------
+Authenticate and set project:
 
-# System Design (Future Microservices)
-
-    Frontend UI
-         │
-         ▼
-    API Gateway
-         │
-         ├── Auth Service
-         ├── Policy Engine
-         ├── Payment Processor
-         ├── Agent Monitoring
-         └── Analytics Engine
-                │
-                ▼
-            Data Layer
-         (PostgreSQL + Redis)
-
-Benefits:
-
--   scalability
--   modular services
--   improved fault tolerance
--   easier AI agent integration
-
-------------------------------------------------------------------------
-
-# Product Roadmap
-
-Phase 1 --- Prototype - Flask dashboard - Policy creation - Wallet
-simulation - Transaction monitoring
-
-Phase 2 --- Data Layer - PostgreSQL persistence - authentication
-system - multi‑user dashboards
-
-Phase 3 --- Real Payment Rails - blockchain wallet integration - bank
-payment APIs - real settlement tracking
-
-Phase 4 --- AI Agent Platform - autonomous payment agents - anomaly
-detection - spending predictions - policy auto‑optimization
-
-------------------------------------------------------------------------
-
-# Fintech Compliance Considerations
-
-Future production system should address:
-
-PCI‑DSS --- secure handling of payment information\
-AML --- anti‑money‑laundering monitoring\
-Audit logging --- immutable transaction logs\
-Access control --- role‑based permissions\
-Encryption --- secure key management\
-Rate limiting --- prevent API abuse
-
-------------------------------------------------------------------------
-
-# Contributing
-
-1.  Fork repository
-2.  Create branch
-
-```{=html}
-<!-- -->
+```bash
+gcloud auth login
+gcloud config set project stablepayguard
 ```
-    git checkout -b feature/my-feature
 
-3.  Commit
+Deploy (Cloud Build rebuilds the Docker image and deploys a new revision):
 
-```{=html}
-<!-- -->
+```bash
+gcloud run deploy stablepayguard \
+  --source . \
+  --region us-east1 \
+  --project stablepayguard \
+  --quiet
 ```
-    git commit -m "Add feature"
 
-4.  Push
+Secrets are injected at runtime from Google Secret Manager via `--update-secrets`. Do not pass them as `--set-env-vars`. See [`StablePayGuard_Manual.docx`](StablePayGuard_Manual.docx) for the full infrastructure reference including Secret Manager setup, Cloud SQL, and rollback procedures.
 
-```{=html}
-<!-- -->
+---
+
+## Architecture
+
 ```
-    git push origin feature/my-feature
+Browser (HTML / CSS / JS)
+        │  REST API
+        ▼
+Flask Backend  ──  Gunicorn (Cloud Run) / dev server (local)
+  ├── 5 route blueprints (auth, policies, payments, uniswap, wallet)
+  ├── 4 service modules  (agent, policy, uniswap, web3)
+  ├── Pydantic validation + Flask-Limiter rate limiting
+  └── secrets.py  →  GCP Secret Manager (Cloud Run) / .env (local)
+        │
+        ├── PostgreSQL  ──  Cloud SQL (GCP) / SQLite (local fallback)
+        │
+        ├── Ethereum Sepolia  ──  PolicyManager.sol
+        │       via Infura RPC
+        │
+        └── Uniswap v3 Subgraph  ──  live token prices (60s cache)
+```
 
-5.  Open Pull Request
+---
 
-Guidelines:
+## Roadmap
 
--   Follow PEP8 Python style
--   Document new endpoints
--   Add tests when possible
+| Phase | Status | Scope |
+|---|---|---|
+| 1 — Core Platform | ✅ Complete | Policy engine, AI parsing, dashboard, on-chain enforcement, security audit |
+| 2 — Multi-user Auth | Planned | JWT tokens, role-based access, multi-user dashboards |
+| 3 — Real Payment Rails | Planned | USDC transfers, bank APIs, escrow |
+| 4 — AI Agent Platform | Planned | Anomaly detection, spending predictions, agent orchestration |
 
-------------------------------------------------------------------------
+---
 
-# License
+## License
 
-MIT License
-
-Copyright (c) 2026 StablePayGuard
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software to deal in the Software without restriction.
-
-The software is provided "as is", without warranty of any kind.
-
-------------------------------------------------------------------------
-
+MIT License — Copyright (c) 2026 StablePayGuard

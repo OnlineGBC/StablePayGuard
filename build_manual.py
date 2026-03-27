@@ -216,7 +216,7 @@ add_paragraph(doc, 'This is a Git repository. All code changes are committed and
 
 add_heading(doc, 'GitHub', level=2)
 add_paragraph(doc, 'The repository is hosted at:')
-add_code(doc, 'https://github.com/OnlineGBC/CryptoPayRailsAgent')
+add_code(doc, 'https://github.com/OnlineGBC/StablePayGuard')
 add_paragraph(doc, (
     'This is the source of truth for all deployments. Cloud builds pull from a local push '
     'via gcloud run deploy --source . which uploads sources directly to Google Cloud Build.'
@@ -245,9 +245,9 @@ add_table(doc,
     ['Requirement', 'Purpose'],
     [
         ['Python 3.10+', 'Runs the Flask application'],
-        ['PostgreSQL 15+ (or Docker)', 'Required database — SQLite is not supported'],
         ['pip', 'Installs Python dependencies'],
         ['Git', 'Clones the repository'],
+        ['PostgreSQL 15+ or Docker (optional)', 'Production database. If DATABASE_URL is not set, SQLite is used automatically for local development.'],
     ]
 )
 
@@ -280,7 +280,7 @@ add_heading(doc, '5. Running Locally', level=1)
 
 add_heading(doc, 'Option A — Docker Compose (Recommended)', level=2)
 add_paragraph(doc, '1. Clone the repository:')
-add_code(doc, 'git clone https://github.com/OnlineGBC/CryptoPayRailsAgent\ncd CryptoPayRailsAgent')
+add_code(doc, 'git clone https://github.com/OnlineGBC/StablePayGuard\ncd StablePayGuard')
 add_paragraph(doc, '2. Copy the example environment file and fill in your values:')
 add_code(doc, 'cp .env.example .env')
 add_paragraph(doc, '3. Start the database and web service:')
@@ -291,39 +291,44 @@ add_paragraph(doc, (
     'container (stablepayguard). Data persists in a Docker volume (postgres_data) across restarts.'
 ))
 
-add_heading(doc, 'Option B — Manual (No Docker)', level=2)
+add_heading(doc, 'Option B — SQLite (Simplest, No Database Required)', level=2)
+add_paragraph(doc, 'If DATABASE_URL is not set (or is commented out in .env), the app automatically uses SQLite. No PostgreSQL or Docker needed.')
+add_paragraph(doc, '1. Install dependencies:')
+add_code(doc, 'pip install -r requirements.txt')
+add_paragraph(doc, '2. Create a .env file and comment out DATABASE_URL:')
+add_code(doc, 'cp .env.example .env\n# Edit .env: comment out DATABASE_URL line')
+add_paragraph(doc, '3. Run the app:')
+add_code(doc, 'python app/app.py')
+add_paragraph(doc, '4. Open http://localhost:5000. A SQLite database file is created automatically in app/instance/.')
+
+add_heading(doc, 'Option C — Manual PostgreSQL (No Docker)', level=2)
 add_paragraph(doc, '1. Start a local PostgreSQL instance and create the database and user:')
 add_code(doc, "CREATE USER stablepayguard WITH PASSWORD 'stablepayguard';\nCREATE DATABASE stablepayguard OWNER stablepayguard;")
 add_paragraph(doc, '2. Install Python dependencies:')
 add_code(doc, 'pip install -r requirements.txt')
-add_paragraph(doc, '3. Create a .env file in the project root. A full example with all currently configured values:')
+add_paragraph(doc, '3. Create a .env file:')
 add_code(doc, """\
-# AI providers
-SYNTH_API_KEY=sk-synth-9dfaea1eab1b785da33fdc13fef6184019619182a9d272a5
-OPENAI_API_KEY=<your-openai-key>
+# AI providers (at least one recommended for live payment intent parsing)
+SYNTH_API_KEY=<your-anthropic-api-key>
+OPENAI_API_KEY=<your-openai-api-key>
 
 # Flask
 FLASK_ENV=development
 PORT=5000
-SECRET_KEY=<your-secret-key>
-ADMIN_PASSWORD=demo
+SECRET_KEY=<any-long-random-string>
+ADMIN_PASSWORD=<your-chosen-password>
 
-# Database — local (docker-compose)
+# Database (comment out to use SQLite automatically)
 DATABASE_URL=postgresql://stablepayguard:stablepayguard@localhost:5432/stablepayguard
 
-# Blockchain / deployment (Sepolia testnet)
+# Blockchain / Sepolia testnet (all optional — omit for demo mode)
 RPC_URL=https://sepolia.infura.io/v3/<your-infura-key>
 PRIVATE_KEY=<your-wallet-private-key>
 POLICY_CONTRACT=0x16229C14aAa18C7bC069f5b9092f5Af8884f3781
-OWNER_WALLET=0x442b7bcb6aa852fa8334ee6a654a0238559026c9
-
-# Hackathon registration
-# participantId: ff1989dc2cca45f7b2549788cee675c5
-# teamId: d3fd238cc8f0468e9ce0531c021326dd
-# registrationTxn: https://basescan.org/tx/0x8b01c8f936a063daefa1a01dcd94c7fc38646683d37ba6ff61844eaccf6e0547""")
+OWNER_WALLET=<your-wallet-address>""")
 add_paragraph(doc, 'Note: The .env file is listed in .gitignore and will never be committed to the repository.')
 add_paragraph(doc, '4. Run the app:')
-add_code(doc, 'cd app\npython app.py')
+add_code(doc, 'python app/app.py')
 add_paragraph(doc, '5. Open http://localhost:5000.')
 
 # ---------------------------------------------------------------------------
@@ -393,7 +398,11 @@ for item in [
     doc.add_paragraph(item, style='List Bullet')
 add_paragraph(doc, 'If any rule is violated, a 400 Bad Request response is returned with a field-level error message.')
 
-add_heading(doc, '7.4 Submitting a Payment Intent', level=2)
+add_heading(doc, '7.4 Deactivating a Policy', level=2)
+add_paragraph(doc, '1. Click Policies in the sidebar.\n2. Select a policy from the list.\n3. Click Deactivate Policy.\n4. The policy is deactivated on-chain (or in demo mode). No further payments can be made against it.')
+add_paragraph(doc, 'Deactivation is permanent. To re-enable spending, create a new policy.')
+
+add_heading(doc, '7.5 Submitting a Payment Intent', level=2)
 add_paragraph(doc, '[SCREENSHOT: Payment intent form with a natural-language task entered]').runs[0].italic = True
 add_paragraph(doc, '1. Click Payments in the sidebar.\n2. In the Payment Intent panel, type a natural-language task, for example:')
 for item in [
@@ -407,7 +416,25 @@ add_code(doc, '{\n  "recipient": "AWS",\n  "amount": 200,\n  "token": "USDC",\n 
 add_paragraph(doc, '5. The intent is stored in the database and appears in the transaction feed on the Dashboard.')
 add_paragraph(doc, 'Note: In demo mode (no AI API key configured), a pre-built demo response is returned. See Section 11 to enable live AI parsing.')
 
-add_heading(doc, '7.5 Connecting a Wallet', level=2)
+add_heading(doc, '7.6 Executing a Payment', level=2)
+add_paragraph(doc, '1. Click Payments in the sidebar.\n2. In the Execute Payment panel, fill in:')
+add_table(doc,
+    ['Field', 'Description', 'Example'],
+    [
+        ['Policy ID', 'The policy to charge this payment against', 'POL-101'],
+        ['Recipient', 'Name or address of the payment recipient', 'AWS'],
+        ['Amount', 'Payment amount in USD', '500'],
+        ['Purpose', 'Optional description of the payment', 'cloud hosting'],
+    ]
+)
+add_paragraph(doc, '3. Click Execute Payment.\n4. The system validates the amount against the policy\'s remaining budget. If it would exceed the budget, the request is rejected with a 422 error.\n5. If approved, the payment is submitted on-chain (live mode) or recorded as a demo transaction. The transaction appears in the ledger.')
+
+add_heading(doc, '7.7 Viewing and Filtering Transactions', level=2)
+add_paragraph(doc, '1. Click Transactions in the sidebar to see the full transaction ledger.\n2. Filter by status or policy using the query parameters:')
+add_code(doc, 'GET /api/transactions?status=Completed&policy=POL-101&limit=20&offset=0')
+add_paragraph(doc, 'Available status values: Completed, Pending, Declined.')
+
+add_heading(doc, '7.8 Connecting a Wallet', level=2)
 add_paragraph(doc, '1. Click the Connect Wallet button in the top bar, or navigate to the Wallet section.\n'
                '2. Optionally enter a valid Ethereum address (e.g. 0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045). If left blank, a demo address is used.\n'
                '3. Click Connect.\n'
@@ -415,7 +442,7 @@ add_paragraph(doc, '1. Click the Connect Wallet button in the top bar, or naviga
                '5. The Dashboard wallet panel shows connected: true.')
 add_paragraph(doc, 'Validation: The address must be a valid Ethereum address (42 characters, starting with 0x, valid hex). Invalid addresses return a 400 error.')
 
-add_heading(doc, '7.6 Viewing Policies', level=2)
+add_heading(doc, '7.9 Viewing Policies', level=2)
 add_paragraph(doc, '1. Click Policies in the sidebar.\n2. The policy list shows all created policies with:')
 for item in [
     'Policy ID', 'Agent address', 'Token', 'Total budget',
@@ -701,16 +728,26 @@ add_heading(doc, 'services/agent_service.py — AI Intent Parser', level=3)
 add_paragraph(doc, 'Fallback chain:')
 for item in [
     'If SYNTH_API_KEY set → calls Anthropic (claude-haiku-4-5-20251001)',
-    'Else if OPENAI_API_KEY set → calls OpenAI (gpt-3.5-turbo)',
-    'Else → returns a hardcoded demo response',
+    'Else if OPENAI_API_KEY set → calls OpenAI (gpt-4o-mini)',
+    'Else → returns a demo response with a random realistic amount',
 ]:
     doc.add_paragraph(item, style='List Number')
 add_paragraph(doc, 'Returns: {"recipient": ..., "amount": ..., "token": ..., "purpose": ...}')
 
+add_heading(doc, 'secrets.py — Secret Loader', level=3)
+add_paragraph(doc, 'Detects whether the app is running on Cloud Run (K_SERVICE env var set by the runtime):')
+for item in [
+    'Cloud Run: fetches each secret from GCP Secret Manager. Secrets already injected via --update-secrets are skipped.',
+    'Local: calls python-dotenv load_dotenv() to read the .env file.',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
 add_heading(doc, 'extensions.py — Rate Limiting', level=3)
 for item in [
     'Default limits: 100 requests/day, 10 requests/minute per IP',
+    'Login endpoint: 5 requests/minute, 20 requests/hour (brute force protection)',
     'Payment intent endpoint: 10 requests/minute',
+    'Payment execution endpoint: 20 requests/minute',
     'Tests are exempted via @limiter.request_filter when TESTING=True',
 ]:
     doc.add_paragraph(item, style='List Bullet')
@@ -746,8 +783,8 @@ add_code(doc, 'python -m pytest tests/ -v --cov=app --cov-report=term-missing')
 add_table(doc,
     ['File', 'Tests', 'What they cover'],
     [
-        ['test_api.py', '33', 'All HTTP endpoints, auth, validation, persistence, remaining budget'],
-        ['test_validation.py', '21', 'Pydantic schemas — valid inputs, invalid inputs, edge cases'],
+        ['test_api.py', '37', 'All HTTP endpoints, auth, validation, persistence, remaining budget, transaction filtering'],
+        ['test_validation.py', '27', 'Pydantic schemas — PolicyCreate, PaymentIntentRequest, PaymentExecuteRequest, SwapQuoteRequest, WalletConnectRequest'],
         ['test_policy_service.py', '6', 'create_policy() in demo mode and with mocked Web3 failure'],
         ['test_agent_service.py', '6', 'generate_payment_intent() with mocked Anthropic and OpenAI'],
     ]
@@ -807,12 +844,21 @@ add_heading(doc, 'Endpoint Protection', level=2)
 add_table(doc,
     ['Endpoint', 'Auth Required'],
     [
+        ['POST /api/auth/login', 'No'],
+        ['POST /api/auth/logout', 'No'],
+        ['GET /api/auth/status', 'No'],
+        ['GET /api/policies', 'No'],
         ['POST /api/policies', 'Yes'],
+        ['POST /api/policies/<id>/deactivate', 'Yes'],
         ['POST /api/payment-intent', 'Yes'],
+        ['POST /api/payment', 'Yes'],
+        ['GET /api/transactions', 'No'],
         ['POST /api/wallet/connect', 'Yes'],
-        ['GET /api/policies', 'Yes'],
-        ['GET /api/dashboard', 'No (public read)'],
+        ['GET /api/dashboard', 'No'],
         ['GET /api/charts/payments', 'No'],
+        ['GET /api/token/price/<symbol>', 'No'],
+        ['GET /api/token/prices', 'No'],
+        ['POST /api/token/quote', 'No'],
         ['GET /api/contract/status', 'No'],
         ['GET /', 'No'],
     ]
@@ -870,10 +916,11 @@ for item in [
     doc.add_paragraph(item, style='List Bullet')
 
 add_heading(doc, 'Database Connection Refused (Local)', level=2)
+add_paragraph(doc, 'Easiest fix: comment out DATABASE_URL in your .env file. The app will fall back to SQLite automatically and restart cleanly.')
 for item in [
-    'Ensure PostgreSQL is running: pg_isready -h localhost',
-    'Verify the DATABASE_URL matches your local Postgres user/password/dbname',
-    'If using Docker Compose, ensure the db service is healthy before web starts',
+    'If you need PostgreSQL: ensure it is running (pg_isready -h localhost)',
+    'Verify DATABASE_URL matches your local Postgres user/password/dbname',
+    'If using Docker Compose: ensure the db service is healthy before the web service starts',
 ]:
     doc.add_paragraph(item, style='List Bullet')
 
@@ -910,7 +957,7 @@ add_table(doc,
         ['Demo AI in free tier', 'Without an Anthropic or OpenAI key, payment intent parsing returns a static demo response.'],
         ['No email or webhook alerts', 'No notification system for rejected payments or policy breaches.'],
         ['No audit log export', 'The activity feed is viewable in the UI only. No CSV/PDF export.'],
-        ['No policy editing or deletion', 'Policies can be created but not modified or deactivated through the UI.'],
+        ['No policy editing', 'Policies can be created or deactivated but not modified once created.'],
         ['db-f1-micro Cloud SQL tier', 'The deployed instance uses the smallest available tier — not suitable for production load.'],
         ['Sepolia testnet only', 'Smart contract integration targets Ethereum Sepolia. Mainnet requires redeployment.'],
         ['No MetaMask integration', 'Wallet connection accepts a manually typed address only. No WalletConnect or MetaMask.'],
