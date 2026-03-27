@@ -1,12 +1,14 @@
 import os
 import logging
 from flask import Blueprint, request, jsonify, session
+from extensions import limiter
 
 logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 
 @auth_bp.route("/api/auth/login", methods=["POST"])
+@limiter.limit("5 per minute; 20 per hour")
 def login():
     data = request.get_json(silent=True) or {}
     password = data.get("password", "")

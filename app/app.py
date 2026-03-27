@@ -1,9 +1,9 @@
 import os
 import logging
-from dotenv import load_dotenv
+from secrets import load_secrets
 from flask import Flask, render_template, jsonify
 
-load_dotenv()
+load_secrets()
 
 # ---------------------------------------------------------------------------
 # Logging
