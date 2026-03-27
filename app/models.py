@@ -1,7 +1,19 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import sqlite3
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
+
+
+# Enable FK enforcement for SQLite (PostgreSQL enforces them automatically)
+@event.listens_for(Engine, "connect")
+def _set_sqlite_fk_pragma(dbapi_connection, _):
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cursor = dbapi_connection.cursor()
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
 
 
 class Policy(db.Model):
@@ -12,7 +24,7 @@ class Policy(db.Model):
     budget = db.Column(db.Integer, nullable=False)
     purpose = db.Column(db.String(500), nullable=False)
     tx_hash = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def to_dict(self):
         return {
@@ -27,13 +39,23 @@ class Policy(db.Model):
 
 class Transaction(db.Model):
     __tablename__ = "transactions"
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('Completed', 'Pending', 'Declined')",
+            name="ck_tx_status",
+        ),
+    )
     id = db.Column(db.String(20), primary_key=True)
     recipient = db.Column(db.String(100), nullable=False)
-    policy = db.Column(db.String(20))
+    policy = db.Column(
+        db.String(20),
+        db.ForeignKey("policies.id", ondelete="SET NULL"),
+        index=True,
+    )
     amount = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), nullable=False)
     hash = db.Column(db.String(100))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def to_dict(self):
         return {
@@ -52,7 +74,7 @@ class ActivityLog(db.Model):
     action = db.Column(db.String(50), nullable=False)
     text = db.Column(db.String(500), nullable=False)
     time = db.Column(db.String(20))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def to_dict(self):
         return {
@@ -71,7 +93,7 @@ class PaymentIntent(db.Model):
     purpose = db.Column(db.String(500))
     mode = db.Column(db.String(20), default="live")
     error = db.Column(db.String(500))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
 
     def to_dict(self):
         return {

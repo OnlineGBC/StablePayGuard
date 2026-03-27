@@ -291,6 +291,39 @@ def test_policies_list_includes_remaining_budget(auth_client):
 
 
 # ---------------------------------------------------------------------------
+# GET /api/transactions
+# ---------------------------------------------------------------------------
+
+def test_transactions_returns_list(client):
+    res = client.get("/api/transactions")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert "transactions" in data
+    assert "total" in data
+    assert isinstance(data["transactions"], list)
+
+
+def test_transactions_filter_by_status(client):
+    res = client.get("/api/transactions?status=Completed")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert all(t["status"] == "Completed" for t in data["transactions"])
+
+
+def test_transactions_pagination(client):
+    res = client.get("/api/transactions?limit=5&offset=0")
+    assert res.status_code == 200
+    data = res.get_json()
+    assert data["limit"] == 5
+    assert data["offset"] == 0
+
+
+def test_transactions_invalid_limit(client):
+    res = client.get("/api/transactions?limit=abc")
+    assert res.status_code == 400
+
+
+# ---------------------------------------------------------------------------
 # GET /api/token/price/<symbol>
 # ---------------------------------------------------------------------------
 

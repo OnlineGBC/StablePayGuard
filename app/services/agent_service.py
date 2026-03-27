@@ -1,5 +1,6 @@
 import os
 import json
+import random
 import logging
 
 logger = logging.getLogger(__name__)
@@ -82,4 +83,9 @@ def generate_payment_intent(task: str) -> dict:
 
     # Demo fallback
     logger.warning("No AI API key configured — returning demo response")
-    return {"recipient": "demo-vendor", "amount": 0, "purpose": task, "mode": "demo"}
+    return {
+        "recipient": "demo-vendor",
+        "amount": random.randint(100, 5000),
+        "purpose": task,
+        "mode": "demo",
+    }

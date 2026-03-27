@@ -10,6 +10,27 @@ logger = logging.getLogger(__name__)
 payments_bp = Blueprint("payments", __name__)
 
 
+@payments_bp.route("/api/transactions", methods=["GET"])
+def list_transactions():
+    status = request.args.get("status")
+    policy = request.args.get("policy")
+    try:
+        limit = min(int(request.args.get("limit", 50)), 200)
+        offset = int(request.args.get("offset", 0))
+    except ValueError:
+        return jsonify({"error": "limit and offset must be integers"}), 400
+
+    from models import Transaction
+    q = Transaction.query.order_by(Transaction.created_at.desc())
+    if status:
+        q = q.filter(Transaction.status == status)
+    if policy:
+        q = q.filter(Transaction.policy == policy)
+    total = q.count()
+    txs = [t.to_dict() for t in q.offset(offset).limit(limit).all()]
+    return jsonify({"total": total, "limit": limit, "offset": offset, "transactions": txs})
+
+
 @payments_bp.route("/api/payment-intent", methods=["POST"])
 @login_required
 @limiter.limit("10/minute")

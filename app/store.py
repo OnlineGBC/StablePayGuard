@@ -5,7 +5,7 @@ Seed data is inserted once on first run via seed_if_empty().
 """
 import uuid
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ def get_transactions(limit=None):
 def new_tx(recipient, policy, amount, status):
     from models import db, Transaction
     tx = Transaction(
-        id=f"TX-{str(uuid.uuid4())[:6].upper()}",
+        id=f"TX-{uuid.uuid4().hex[:8].upper()}",
         recipient=recipient,
         policy=policy,
         amount=amount,
@@ -143,23 +143,32 @@ def seed_if_empty():
     ]:
         db.session.add(p)
 
+    now = datetime.utcnow()
     for t in [
         Transaction(id="TX-A1B2C3", recipient="AWS", policy="POL-102", amount=4200,
-                    status="Completed", hash="0x4a1b2c3d4e"),
+                    status="Completed", hash="0x4a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b",
+                    created_at=now - timedelta(days=6)),
         Transaction(id="TX-D4E5F6", recipient="Stripe", policy="POL-101", amount=1800,
-                    status="Completed", hash="0x7f8a9b0c1d"),
+                    status="Completed", hash="0x7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a",
+                    created_at=now - timedelta(days=5)),
         Transaction(id="TX-G7H8I9", recipient="GitHub", policy="POL-101", amount=420,
-                    status="Completed", hash="0x2e3f4a5b6c"),
+                    status="Completed", hash="0x2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f",
+                    created_at=now - timedelta(days=4)),
         Transaction(id="TX-J1K2L3", recipient="Contractor A", policy="POL-103", amount=3500,
-                    status="Pending", hash="0x9d0e1f2a3b"),
+                    status="Pending", hash="0x9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e",
+                    created_at=now - timedelta(days=3)),
         Transaction(id="TX-M4N5O6", recipient="Datadog", policy="POL-102", amount=890,
-                    status="Completed", hash="0x5c6d7e8f9a"),
+                    status="Completed", hash="0x5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d",
+                    created_at=now - timedelta(days=2)),
         Transaction(id="TX-P7Q8R9", recipient="Twilio", policy="POL-101", amount=210,
-                    status="Declined", hash="0x1b2c3d4e5f"),
+                    status="Declined", hash="0x1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c",
+                    created_at=now - timedelta(days=2)),
         Transaction(id="TX-S1T2U3", recipient="Vercel", policy="POL-102", amount=650,
-                    status="Completed", hash="0x6f7a8b9c0d"),
+                    status="Completed", hash="0x6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a",
+                    created_at=now - timedelta(days=1)),
         Transaction(id="TX-V4W5X6", recipient="Contractor B", policy="POL-103", amount=1200,
-                    status="Completed", hash="0x3e4f5a6b7c"),
+                    status="Completed", hash="0x3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f",
+                    created_at=now),
     ]:
         db.session.add(t)
 

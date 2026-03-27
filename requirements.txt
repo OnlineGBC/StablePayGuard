@@ -7,7 +7,6 @@ web3
 python-dotenv
 eth-account
 pydantic>=2.0
-sqlalchemy
 openai
 anthropic
 gunicorn>=21.0.0
