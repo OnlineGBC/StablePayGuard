@@ -81,6 +81,34 @@ class SwapQuoteRequest(BaseModel):
         return v
 
 
+class PaymentExecuteRequest(BaseModel):
+    policy_id: str
+    recipient: str
+    amount: float
+    purpose: str = ""
+
+    @field_validator("policy_id")
+    @classmethod
+    def policy_id_nonempty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("policy_id is required")
+        return v.strip()
+
+    @field_validator("recipient")
+    @classmethod
+    def recipient_nonempty(cls, v):
+        if not v or not v.strip():
+            raise ValueError("recipient is required")
+        return v.strip()
+
+    @field_validator("amount")
+    @classmethod
+    def amount_positive(cls, v):
+        if v <= 0:
+            raise ValueError("amount must be positive")
+        return v
+
+
 class WalletConnectRequest(BaseModel):
     address: str = ""
 

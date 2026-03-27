@@ -1,3 +1,4 @@
+import os
 import logging
 from flask import Blueprint, request, jsonify
 from web3 import Web3
@@ -18,7 +19,7 @@ def wallet_connect():
         if not Web3.is_address(address):
             return jsonify({"error": "Invalid Ethereum address"}), 400
     else:
-        address = "0xA91F73C2Demo"
+        address = os.environ.get("OWNER_WALLET", "0x0000000000000000000000000000000000000000")
 
     store.set_wallet(True, address)
     store.add_activity("Wallet Connected", f"Wallet {address} connected")

@@ -5,7 +5,7 @@ from pydantic import ValidationError
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../app"))
 
-from schemas import PolicyCreate, PaymentIntentRequest, SwapQuoteRequest, WalletConnectRequest
+from schemas import PolicyCreate, PaymentIntentRequest, SwapQuoteRequest, WalletConnectRequest, PaymentExecuteRequest
 
 
 class TestPolicyCreate:
@@ -98,6 +98,34 @@ class TestSwapQuoteRequest:
         r = SwapQuoteRequest(tokenIn="eth", tokenOut="usdc", amountUSD=100)
         assert r.tokenIn == "ETH"
         assert r.tokenOut == "USDC"
+
+
+class TestPaymentExecuteRequest:
+    def test_valid(self):
+        r = PaymentExecuteRequest(policy_id="POL-101", recipient="AWS", amount=500)
+        assert r.policy_id == "POL-101"
+        assert r.amount == 500
+        assert r.purpose == ""
+
+    def test_empty_policy_id_raises(self):
+        with pytest.raises(ValidationError):
+            PaymentExecuteRequest(policy_id="", recipient="AWS", amount=100)
+
+    def test_empty_recipient_raises(self):
+        with pytest.raises(ValidationError):
+            PaymentExecuteRequest(policy_id="POL-101", recipient="", amount=100)
+
+    def test_zero_amount_raises(self):
+        with pytest.raises(ValidationError):
+            PaymentExecuteRequest(policy_id="POL-101", recipient="AWS", amount=0)
+
+    def test_negative_amount_raises(self):
+        with pytest.raises(ValidationError):
+            PaymentExecuteRequest(policy_id="POL-101", recipient="AWS", amount=-50)
+
+    def test_purpose_optional(self):
+        r = PaymentExecuteRequest(policy_id="POL-101", recipient="AWS", amount=100, purpose="cloud hosting")
+        assert r.purpose == "cloud hosting"
 
 
 class TestWalletConnectRequest:

@@ -48,7 +48,7 @@ def new_tx(recipient, policy, amount, status):
         policy=policy,
         amount=amount,
         status=status,
-        hash=f"0x{str(uuid.uuid4()).replace('-', '')[:10]}",
+        hash=f"0x{uuid.uuid4().hex}{uuid.uuid4().hex}",
     )
     db.session.add(tx)
     db.session.commit()

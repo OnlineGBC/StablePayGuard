@@ -1,7 +1,7 @@
 import logging
 from flask import Blueprint, request, jsonify
 from services.agent_service import generate_payment_intent
-from schemas import PaymentIntentRequest
+from schemas import PaymentIntentRequest, PaymentExecuteRequest
 from utils import login_required, validate_request
 from extensions import limiter
 import store
@@ -23,3 +23,62 @@ def payment_intent():
     store.save_intent(parsed.task, intent)
     logger.info("Payment intent generated and persisted for task: %s", parsed.task[:60])
     return jsonify(intent)
+
+
+@payments_bp.route("/api/payment", methods=["POST"])
+@login_required
+@limiter.limit("20/minute")
+def execute_payment():
+    data = request.get_json(silent=True) or {}
+    parsed, err = validate_request(PaymentExecuteRequest, data)
+    if err:
+        return jsonify(err[0]), err[1]
+
+    # Validate policy exists
+    policies = {p["id"]: p for p in store.get_policies()}
+    policy = policies.get(parsed.policy_id)
+    if not policy:
+        return jsonify({"error": f"Policy {parsed.policy_id} not found"}), 404
+
+    # Check remaining budget
+    transactions = store.get_transactions()
+    spent = sum(
+        t["amount"] for t in transactions
+        if t["policy"] == parsed.policy_id and t["status"] == "Completed"
+    )
+    remaining = policy["budget"] - spent
+    if parsed.amount > remaining:
+        store.add_activity(
+            "Payment Rejected",
+            f"${parsed.amount} to {parsed.recipient} declined — exceeds remaining budget ${remaining:.2f} on {parsed.policy_id}",
+        )
+        logger.warning("Payment rejected: amount %.2f exceeds remaining budget %.2f", parsed.amount, remaining)
+        return jsonify({"error": "Amount exceeds remaining policy budget", "remaining": remaining}), 422
+
+    # Attempt on-chain approval; fall back to demo
+    tx_hash = None
+    mode = "demo"
+    try:
+        from services.web3_service import approve_payment, w3, contract
+        if w3 and contract:
+            tx_hash = approve_payment(parsed.policy_id, int(parsed.amount))
+            mode = "live"
+    except Exception as e:
+        logger.warning("On-chain approval failed, falling back to demo: %s", e)
+
+    tx = store.new_tx(parsed.recipient, parsed.policy_id, parsed.amount, "Completed")
+    if tx_hash:
+        # Overwrite the demo hash with the real on-chain hash
+        from models import db, Transaction
+        record = db.session.get(Transaction, tx["id"])
+        if record:
+            record.hash = tx_hash
+            db.session.commit()
+        tx["hash"] = tx_hash
+
+    store.add_activity(
+        "Payment Executed",
+        f"{tx['id']} sent ${parsed.amount} to {parsed.recipient} via {parsed.policy_id}",
+    )
+    logger.info("Payment executed: %s %.2f to %s [%s]", tx["id"], parsed.amount, parsed.recipient, mode)
+    return jsonify({**tx, "mode": mode}), 201

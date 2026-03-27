@@ -109,14 +109,28 @@ def dashboard_data():
 
 @app.route("/api/charts/payments")
 def chart_payments():
+    from datetime import datetime, timedelta
+    from models import Transaction
+
+    today = datetime.utcnow().date()
+    days = [today - timedelta(days=i) for i in range(6, -1, -1)]
+    day_totals = {d: 0.0 for d in days}
+
+    cutoff = datetime.utcnow() - timedelta(days=7)
+    txs = Transaction.query.filter(
+        Transaction.status == "Completed",
+        Transaction.created_at >= cutoff,
+    ).all()
+
+    for tx in txs:
+        tx_date = tx.created_at.date()
+        if tx_date in day_totals:
+            day_totals[tx_date] += tx.amount
+
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
     data = [
-        {"day": "Mon", "value": 4200},
-        {"day": "Tue", "value": 5500},
-        {"day": "Wed", "value": 6100},
-        {"day": "Thu", "value": 4800},
-        {"day": "Fri", "value": 7200},
-        {"day": "Sat", "value": 6300},
-        {"day": "Sun", "value": 7000},
+        {"day": day_names[d.weekday()], "value": round(day_totals[d], 2)}
+        for d in days
     ]
     return jsonify(data)
 
