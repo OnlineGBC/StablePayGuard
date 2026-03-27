@@ -155,7 +155,7 @@ def test_create_policy_increments_kpi(auth_client):
     auth_client.post("/api/policies", json=payload)
     kpi = auth_client.get("/api/dashboard").get_json()["kpi"]
     assert kpi["policies"] == 1
-    assert kpi["payments"] == 1  # demo tx added on policy creation
+    assert kpi["payments"] == 0
 
 
 def test_create_policy_adds_activity(auth_client):
@@ -330,9 +330,9 @@ def test_chart_returns_seven_days(client):
     assert "Mon" in days and "Sun" in days
 
 
-def test_chart_values_are_positive(client):
+def test_chart_values_are_non_negative(client):
     data = client.get("/api/charts/payments").get_json()
-    assert all(d["value"] > 0 for d in data)
+    assert all(d["value"] >= 0 for d in data)
 
 
 # ---------------------------------------------------------------------------

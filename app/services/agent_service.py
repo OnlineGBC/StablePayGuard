@@ -19,6 +19,9 @@ Return ONLY valid JSON in this format:
 }}"""
 
 
+_REQUIRED_FIELDS = {"recipient", "amount", "purpose"}
+
+
 def _parse_json(content: str) -> dict:
     content = content.strip()
     # Strip markdown code fences if present
@@ -27,7 +30,13 @@ def _parse_json(content: str) -> dict:
         content = parts[1] if len(parts) > 1 else parts[0]
         if content.startswith("json"):
             content = content[4:]
-    return json.loads(content.strip())
+    parsed = json.loads(content.strip())
+    missing = _REQUIRED_FIELDS - parsed.keys()
+    if missing:
+        raise ValueError(f"AI response missing required fields: {missing}")
+    if not isinstance(parsed.get("amount"), (int, float)):
+        raise ValueError("AI response 'amount' must be a number")
+    return parsed
 
 
 def generate_payment_intent(task: str) -> dict:
@@ -44,9 +53,9 @@ def generate_payment_intent(task: str) -> dict:
                 messages=[{"role": "user", "content": _PROMPT.format(task=task)}],
             )
             return _parse_json(message.content[0].text)
-        except json.JSONDecodeError as e:
-            logger.error("Anthropic response was not valid JSON: %s", e)
-            return {"error": "AI response was not valid JSON"}
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error("Anthropic response invalid: %s", e)
+            return {"error": str(e)}
         except Exception as e:
             logger.error("Anthropic request failed: %s — falling back to OpenAI", e)
 
@@ -65,8 +74,8 @@ def generate_payment_intent(task: str) -> dict:
                 temperature=0,
             )
             return _parse_json(response.choices[0].message.content)
-        except json.JSONDecodeError:
-            return {"error": "AI response was not valid JSON"}
+        except (json.JSONDecodeError, ValueError) as e:
+            return {"error": str(e)}
         except Exception as e:
             logger.error("OpenAI request failed: %s", e)
             return {"error": "AI request failed", "details": str(e)}

@@ -1,6 +1,6 @@
 import logging
 from flask import Blueprint, request, jsonify
-from services.policy_service import create_policy
+from services.policy_service import create_policy, deactivate_policy
 from schemas import PolicyCreate
 from utils import login_required, validate_request
 import store
@@ -48,7 +48,19 @@ def create():
         tx_hash=tx_hash,
     )
     store.add_activity("Policy Created", f"{policy_id} created for agent {parsed.agent}")
-    store.new_tx("Demo Vendor", policy_id, parsed.totalBudget * 0.1, "Completed")
 
     logger.info("Policy created: %s tx=%s", policy_id, tx_hash)
     return jsonify({"policyId": policy_id, "txHash": tx_hash})
+
+
+@policies_bp.route("/api/policies/<policy_id>/deactivate", methods=["POST"])
+@login_required
+def deactivate(policy_id):
+    policies = {p["id"]: p for p in store.get_policies()}
+    if policy_id not in policies:
+        return jsonify({"error": f"Policy {policy_id} not found"}), 404
+
+    result = deactivate_policy(policy_id)
+    store.add_activity("Policy Deactivated", f"{policy_id} deactivated")
+    logger.info("Policy deactivated: %s", policy_id)
+    return jsonify(result)

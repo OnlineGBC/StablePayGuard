@@ -20,6 +20,26 @@ def payment_intent():
         return jsonify(err[0]), err[1]
 
     intent = generate_payment_intent(parsed.task)
+
+    # Warn if the parsed amount exceeds every policy's remaining budget
+    amount = intent.get("amount", 0)
+    if amount and not intent.get("error"):
+        transactions = store.get_transactions()
+        policies = store.get_policies()
+        affordable = False
+        for p in policies:
+            spent = sum(
+                t["amount"] for t in transactions
+                if t["policy"] == p["id"] and t["status"] == "Completed"
+            )
+            if amount <= (p["budget"] - spent):
+                affordable = True
+                break
+        if not affordable and policies:
+            intent["budget_warning"] = (
+                f"No active policy has sufficient remaining budget for ${amount}"
+            )
+
     store.save_intent(parsed.task, intent)
     logger.info("Payment intent generated and persisted for task: %s", parsed.task[:60])
     return jsonify(intent)

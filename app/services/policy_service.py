@@ -54,6 +54,28 @@ def create_policy(agent, token, total_budget, per_tx_limit, valid_from, valid_un
     return policy_id, f"demo_{policy_id}"
 
 
+def deactivate_policy(policy_id: str) -> dict:
+    """Deactivate a policy on-chain (owner only), or mark it in demo mode."""
+    if contract and w3 and PRIVATE_KEY and OWNER:
+        try:
+            tx = contract.functions.deactivatePolicy(policy_id).build_transaction({
+                "from": OWNER,
+                "nonce": w3.eth.get_transaction_count(OWNER),
+                "gas": 100_000,
+                "gasPrice": w3.eth.gas_price,
+            })
+            signed = w3.eth.account.sign_transaction(tx, PRIVATE_KEY)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            w3.eth.wait_for_transaction_receipt(tx_hash, timeout=60)
+            logger.info("Policy %s deactivated on-chain tx=%s", policy_id, tx_hash.hex())
+            return {"policyId": policy_id, "txHash": f"0x{tx_hash.hex()}", "mode": "live"}
+        except Exception as e:
+            logger.error("deactivatePolicy on-chain failed: %s — demo mode", e)
+
+    logger.info("Policy %s deactivated in demo mode", policy_id)
+    return {"policyId": policy_id, "txHash": f"demo_deactivate_{policy_id}", "mode": "demo"}
+
+
 def get_policy_on_chain(policy_id: str) -> dict:
     """Fetch live policy state from the contract, or return DB record in demo mode."""
     from models import Policy

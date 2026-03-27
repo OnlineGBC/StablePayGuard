@@ -5,9 +5,12 @@ Uses the Uniswap v3 subgraph (no API key required) to fetch live token prices
 so agents can validate USD amounts before executing on-chain payments.
 """
 
+import time
 import requests
 
 SUBGRAPH_URL = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"
+_CACHE_TTL = 60  # seconds
+_price_cache: dict = {}  # symbol -> (result, expires_at)
 
 # Well-known token addresses on Ethereum mainnet
 TOKEN_ADDRESSES = {
@@ -26,8 +29,14 @@ def get_token_price_usd(symbol: str) -> dict:
     """
     symbol = symbol.upper()
 
+    cached, expires_at = _price_cache.get(symbol, (None, 0))
+    if cached and time.time() < expires_at:
+        return cached
+
     if symbol == "USDC" or symbol == "DAI" or symbol == "USDT":
-        return {"symbol": symbol, "priceUSD": 1.0, "source": "stable"}
+        result = {"symbol": symbol, "priceUSD": 1.0, "source": "stable"}
+        _price_cache[symbol] = (result, time.time() + _CACHE_TTL)
+        return result
 
     token_address = TOKEN_ADDRESSES.get(symbol)
     if not token_address:
@@ -69,7 +78,7 @@ def get_token_price_usd(symbol: str) -> dict:
         prev_price = float(day_data[1]["priceUSD"]) if len(day_data) > 1 else price_usd
         change_pct = round(((price_usd - prev_price) / prev_price) * 100, 2) if prev_price else 0
 
-        return {
+        result = {
             "symbol":      symbol,
             "name":        token.get("name", symbol),
             "priceUSD":    round(price_usd, 4),
@@ -77,6 +86,8 @@ def get_token_price_usd(symbol: str) -> dict:
             "ethPriceUSD": round(eth_price, 2),
             "source":      "uniswap-v3"
         }
+        _price_cache[symbol] = (result, time.time() + _CACHE_TTL)
+        return result
 
     except Exception as e:
         return {"error": f"Uniswap query failed: {str(e)}", "symbol": symbol}
