@@ -21,9 +21,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-secret-change-in-prod")
-db_url = os.environ.get("DATABASE_URL")
-if not db_url:
-    raise RuntimeError("DATABASE_URL environment variable is required (PostgreSQL)")
+db_url = os.environ.get("DATABASE_URL", "sqlite:///stablepayguard.db")
 app.config["SQLALCHEMY_DATABASE_URI"] = db_url
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
