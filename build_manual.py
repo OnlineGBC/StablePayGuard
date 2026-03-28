@@ -102,6 +102,7 @@ toc_entries = [
     ('3.', 'Where the Code Lives'),
     ('4.', 'Prerequisites'),
     ('5.', 'Running Locally'),
+    ('   5.0', 'Reconstructing .env from Google Secret Manager'),
     ('6.', 'Accessing the Live App'),
     ('7.', 'Usage Guide'),
     ('   7.1', 'Logging In'),
@@ -303,6 +304,26 @@ add_table(doc,
 # ---------------------------------------------------------------------------
 
 add_heading(doc, '5. Running Locally', level=1)
+
+add_heading(doc, '5.0 Reconstructing .env from Google Secret Manager', level=2)
+add_paragraph(doc, (
+    'All secrets for this project are stored in Google Secret Manager under project '
+    'stablepayguard. If you are setting up on a new machine or the .env file has been '
+    'lost, reconstruct it by fetching each secret using the gcloud CLI.'
+))
+add_paragraph(doc, 'Prerequisites: gcloud CLI installed and authenticated:')
+add_code(doc, 'gcloud auth login\ngcloud config set project stablepayguard')
+add_paragraph(doc, 'Fetch each of the 8 secrets individually:')
+add_code(doc, 'gcloud secrets versions access latest --secret=SECRET_KEY --project=stablepayguard\ngcloud secrets versions access latest --secret=ADMIN_PASSWORD --project=stablepayguard\ngcloud secrets versions access latest --secret=SYNTH_API_KEY --project=stablepayguard\ngcloud secrets versions access latest --secret=OPENAI_API_KEY --project=stablepayguard\ngcloud secrets versions access latest --secret=RPC_URL --project=stablepayguard\ngcloud secrets versions access latest --secret=PRIVATE_KEY --project=stablepayguard\ngcloud secrets versions access latest --secret=POLICY_CONTRACT --project=stablepayguard\ngcloud secrets versions access latest --secret=OWNER_WALLET --project=stablepayguard')
+add_paragraph(doc, (
+    'In addition, fetch LOCAL_ENV_EXTRAS — this contains the local-only settings '
+    '(FLASK_ENV, PORT, DATABASE_URL comment, and reference URLs) that are not part '
+    'of the 8 application secrets:'
+))
+add_code(doc, 'gcloud secrets versions access latest --secret=LOCAL_ENV_EXTRAS --project=stablepayguard')
+add_paragraph(doc, 'Assemble the .env file by combining all 8 secret values with the LOCAL_ENV_EXTRAS block:')
+add_code(doc, '# AI providers\nSYNTH_API_KEY=<from Secret Manager>\nOPENAI_API_KEY=<from Secret Manager>\n\n# Flask\nSECRET_KEY=<from Secret Manager>\nADMIN_PASSWORD=<from Secret Manager>\n\n# Blockchain\nRPC_URL=<from Secret Manager>\nPRIVATE_KEY=<from Secret Manager>\nPOLICY_CONTRACT=<from Secret Manager>\nOWNER_WALLET=<from Secret Manager>\n\n# Paste LOCAL_ENV_EXTRAS content here (FLASK_ENV, PORT, DATABASE_URL, reference URLs)')
+add_paragraph(doc, 'The .env file is listed in .gitignore and will never be committed to the repository.')
 
 add_heading(doc, 'Option A — Docker Compose (Recommended)', level=2)
 add_paragraph(doc, '1. Clone the repository:')
