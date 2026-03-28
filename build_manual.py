@@ -133,6 +133,15 @@ toc_entries = [
     ('17.', 'Security'),
     ('18.', 'Troubleshooting'),
     ('19.', 'Known Limitations'),
+    ('20.', 'Full API Reference'),
+    ('21.', 'Architecture Deep Dive'),
+    ('   21.1', 'System Diagram'),
+    ('   21.2', 'Component Details'),
+    ('   21.3', 'Database Schema'),
+    ('   21.4', 'Data Flow: Payment Execution'),
+    ('   21.5', 'Data Flow: Secret Loading'),
+    ('   21.6', 'Deployment Architecture'),
+    ('22.', 'Roadmap'),
 ]
 for num, title_text in toc_entries:
     p = doc.add_paragraph()
@@ -962,6 +971,289 @@ add_table(doc,
         ['Sepolia testnet only', 'Smart contract integration targets Ethereum Sepolia. Mainnet requires redeployment.'],
         ['No MetaMask integration', 'Wallet connection accepts a manually typed address only. No WalletConnect or MetaMask.'],
         ['Single region', 'App and database are both in us-east1. No multi-region failover.'],
+    ]
+)
+
+# ---------------------------------------------------------------------------
+# Section 20
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '20. Full API Reference', level=1)
+add_paragraph(doc, 'All endpoints exposed by the Flask backend. Endpoints marked Auth=Yes require an active login session (POST /api/auth/login first).')
+
+add_heading(doc, 'Auth', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['POST', '/api/auth/login', 'No', 'Login. Body: {"password": "..."}. Returns {"success": true} on match.'],
+        ['POST', '/api/auth/logout', 'No', 'Clears the session cookie.'],
+        ['GET', '/api/auth/status', 'No', 'Returns {"authenticated": bool}.'],
+    ]
+)
+
+add_heading(doc, 'Dashboard', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['GET', '/api/dashboard', 'No', 'KPIs, recent transactions, activity feed, wallet state, policies with remaining budgets.'],
+        ['GET', '/api/charts/payments', 'No', 'Last 7 days of completed payment volume grouped by day of week.'],
+        ['GET', '/api/contract/status', 'No', 'Web3 connection and contract load status. Returns mode: live or demo.'],
+    ]
+)
+
+add_heading(doc, 'Policies', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['GET', '/api/policies', 'No', 'List all policies.'],
+        ['POST', '/api/policies', 'Yes', 'Create policy. Body: agent, token, totalBudget, perTxLimit, validFrom, validUntil, purpose.'],
+        ['GET', '/api/policies/<id>', 'No', 'Policy detail — live from contract if connected, DB otherwise.'],
+        ['POST', '/api/policies/<id>/deactivate', 'Yes', 'Deactivate policy on-chain (or demo mode fallback). Permanent.'],
+    ]
+)
+
+add_heading(doc, 'Payments and Transactions', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['POST', '/api/payment-intent', 'Yes', 'Parse plain-English task into structured payment JSON via AI. Rate limit: 10/min.'],
+        ['POST', '/api/payment', 'Yes', 'Execute payment. Body: policy_id, recipient, amount, purpose. Validates budget, submits on-chain or demo. Rate limit: 20/min.'],
+        ['GET', '/api/transactions', 'No', 'Filterable ledger. Query params: ?status=, ?policy=, ?limit= (max 200), ?offset=.'],
+    ]
+)
+
+add_heading(doc, 'Tokens', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['GET', '/api/token/price/<symbol>', 'No', 'Live USD price for ETH, USDC, DAI, USDT, WBTC. Results cached 60 seconds.'],
+        ['POST', '/api/token/quote', 'No', 'Swap estimate. Body: tokenIn, tokenOut, amountUSD.'],
+        ['GET', '/api/token/prices', 'No', 'All five token prices in one call.'],
+    ]
+)
+
+add_heading(doc, 'Wallet', level=2)
+add_table(doc,
+    ['Method', 'Path', 'Auth', 'Description'],
+    [
+        ['POST', '/api/wallet/connect', 'Yes', 'Connect wallet. Body: {"address": "0x..."}. Omit address to use OWNER_WALLET from env.'],
+    ]
+)
+
+# ---------------------------------------------------------------------------
+# Section 21
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '21. Architecture Deep Dive', level=1)
+
+add_heading(doc, '21.1 System Diagram', level=2)
+add_code(doc, """\
+Browser (HTML / CSS / JS)
+        |  REST API (JSON)
+        v
+Flask Backend  --  Gunicorn (Cloud Run) / dev server (local)
+  |-- 5 route blueprints (auth, policies, payments, uniswap, wallet)
+  |-- 4 service modules  (agent, policy, uniswap, web3)
+  |-- Pydantic validation + Flask-Limiter rate limiting
+  `-- secrets.py  ->  GCP Secret Manager (Cloud Run) / .env (local)
+        |
+        |-- PostgreSQL  --  Cloud SQL (GCP) / SQLite (local fallback)
+        |
+        |-- Ethereum Sepolia  --  PolicyManager.sol
+        |       via Infura RPC
+        |
+        `-- Uniswap v3 Subgraph  --  live token prices (60s cache)""")
+
+add_heading(doc, '21.2 Component Details', level=2)
+
+add_heading(doc, 'app/app.py — Entry Point', level=3)
+add_paragraph(doc, 'Responsibilities:')
+for item in [
+    'Call load_secrets() to populate os.environ from GCP Secret Manager (Cloud Run) or .env (local)',
+    'Configure SQLAlchemy with DATABASE_URL — falls back to SQLite if not set',
+    'Register 5 blueprints',
+    'Run db.create_all() and seed demo data on first run',
+    'Serve dashboard page (GET /)',
+    'Expose dashboard API, chart API, and contract status API',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'app/secrets.py — Secret Loader', level=3)
+add_paragraph(doc, 'Detects environment via K_SERVICE env var (set automatically by Cloud Run):')
+for item in [
+    'Cloud Run: fetches secrets from GCP Secret Manager for any not already injected via --update-secrets',
+    'Local: calls python-dotenv load_dotenv() to read .env file',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'app/models.py — ORM Models', level=3)
+add_paragraph(doc, 'Five SQLAlchemy models: Policy, Transaction, ActivityLog, PaymentIntent, WalletState.')
+for item in [
+    'Transaction.policy is a foreign key to policies.id (ondelete=SET NULL)',
+    'Transaction.status has a CHECK constraint: only Completed, Pending, Declined accepted',
+    'created_at columns on Transaction, ActivityLog, PaymentIntent are indexed for query performance',
+    'SQLite FK enforcement enabled via PRAGMA foreign_keys=ON event listener',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'app/services/agent_service.py — AI Intent Parser', level=3)
+add_paragraph(doc, 'Fallback chain:')
+for item in [
+    'SYNTH_API_KEY set -> Anthropic (claude-haiku-4-5-20251001)',
+    'OPENAI_API_KEY set -> OpenAI (gpt-4o-mini)',
+    'Neither set -> demo mode with random realistic amount ($100-$5000)',
+]:
+    doc.add_paragraph(item, style='List Number')
+add_paragraph(doc, 'Validates parsed JSON has recipient, amount (numeric), and purpose fields before returning.')
+
+add_heading(doc, 'app/services/uniswap_service.py — Token Prices', level=3)
+for item in [
+    'Queries Uniswap v3 Subgraph (The Graph) via GraphQL',
+    'Stablecoins (USDC, DAI, USDT) hardcoded to $1.00',
+    'ETH and WBTC calculated from pool derivedETH x ethPriceUSD',
+    '60-second in-memory TTL cache per symbol to avoid repeated Subgraph calls',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'app/services/web3_service.py — Blockchain Interface', level=3)
+for item in [
+    'Initialises Web3.HTTPProvider(RPC_URL) on startup',
+    'Loads PolicyManager.json ABI from contracts/abi/',
+    'approve_payment(): builds, signs, and sends approvePayment transaction using PRIVATE_KEY',
+    'Falls back gracefully to demo mode if RPC_URL or POLICY_CONTRACT are not set',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, '21.3 Database Schema', level=2)
+add_table(doc,
+    ['Table', 'Key Columns', 'Notes'],
+    [
+        ['policies', 'id (PK), agent, token, budget, purpose, tx_hash, created_at', 'Indexed on created_at'],
+        ['transactions', 'id (PK), recipient, policy (FK), amount, status, hash, created_at', 'FK -> policies.id; status CHECK constraint; indexed on policy, created_at'],
+        ['activity_logs', 'id, action, text, time, created_at', 'Indexed on created_at'],
+        ['payment_intents', 'id, task, recipient, amount, purpose, mode, error, created_at', 'Indexed on created_at'],
+        ['wallet_state', 'id (singleton=1), connected, address', 'Single row, updated in place'],
+    ]
+)
+
+add_heading(doc, '21.4 Data Flow: Payment Execution', level=2)
+add_code(doc, """\
+POST /api/payment  {policy_id, recipient, amount, purpose}
+        |
+        v
+  Pydantic validation (PaymentExecuteRequest)
+        |
+        v
+  DB: policy exists?  --No--> 404
+        | Yes
+        v
+  DB: remaining budget >= amount?  --No--> 422 + activity log
+        | Yes
+        v
+  web3_service.approve_payment()
+    |-- Connected: on-chain tx, returns real 64-char hash
+    `-- Not connected: skip (demo hash generated by store)
+        |
+        v
+  store.new_tx() -> persist transaction record
+        |
+        v
+  store.add_activity() -> activity log entry
+        |
+        v
+  201 {tx_id, hash, mode: "live"|"demo"}""")
+
+add_heading(doc, '21.5 Data Flow: Secret Loading', level=2)
+add_code(doc, """\
+App starts (app.py calls load_secrets())
+        |
+        |-- K_SERVICE set? (Cloud Run runtime)
+        |     |  Yes
+        |     `-> GCP Secret Manager
+        |           fetch each secret not already in os.environ
+        |           (--update-secrets may have already injected some)
+        |
+        `-- K_SERVICE not set? (local dev)
+              `-> load_dotenv() reads .env file
+        |
+        v
+  os.environ populated -> app initialisation continues""")
+
+add_heading(doc, '21.6 Deployment Architecture', level=2)
+add_code(doc, """\
+Developer machine
+        |  gcloud run deploy --source .
+        v
+Cloud Build
+        |  builds Docker image from Dockerfile
+        v
+Artifact Registry
+        |  stores image
+        v
+Cloud Run (us-east1)  service: stablepayguard
+  Secrets: mounted from Secret Manager
+  DB:      Cloud SQL PostgreSQL via DATABASE_URL env var
+  Port:    8080
+
+Gunicorn command (Dockerfile):
+  gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 8
+           --timeout 60 --chdir /app/app app:app""")
+
+add_paragraph(doc, 'Project structure in the repository:')
+add_code(doc, """\
+StablePayGuard/
+  app/
+    app.py                   Flask entry point, dashboard + chart routes
+    models.py                SQLAlchemy ORM models
+    schemas.py               Pydantic request validation schemas
+    store.py                 DB helper functions and seed data
+    extensions.py            Flask-Limiter setup
+    utils.py                 login_required decorator, validate_request helper
+    secrets.py               Secret loader: GCP Secret Manager / .env fallback
+    routes/
+      auth.py                Login / logout / status
+      policies.py            Policy CRUD + deactivation
+      payments.py            Payment intent, execution, transaction listing
+      uniswap.py             Token price and swap quote
+      wallet.py              Wallet connection
+    services/
+      agent_service.py       AI payment intent parsing
+      policy_service.py      On-chain policy creation and deactivation
+      uniswap_service.py     Uniswap v3 Subgraph price feeds with 60s cache
+      web3_service.py        Web3 connection and contract interface
+    templates/
+      dashboard.html         Single-page dashboard UI
+  contracts/
+    src/PolicyManager.sol    Solidity smart contract (Sepolia)
+    abi/PolicyManager.json   Contract ABI
+    audit/slither_report.md  Slither security audit results
+    deployment.json          Deployed contract addresses
+  tests/
+    test_api.py              Integration tests (requires PostgreSQL)
+    test_agent_service.py    AI service unit tests
+    test_policy_service.py   Policy service unit tests
+    test_validation.py       Schema validation unit tests
+  scripts/deploy.py          Contract deployment script
+  .github/workflows/
+    tests.yml                CI: pytest on every push
+    audit.yml                CI: Slither on contract changes
+  .env.example               Environment variable template
+  Dockerfile                 Cloud Run container
+  docker-compose.yml         Local full-stack: app + PostgreSQL
+  requirements.txt""")
+
+# ---------------------------------------------------------------------------
+# Section 22
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '22. Roadmap', level=1)
+add_table(doc,
+    ['Phase', 'Status', 'Scope'],
+    [
+        ['1 — Core Platform', 'Complete', 'Policy engine, AI parsing, dashboard, on-chain enforcement, security audit'],
+        ['2 — Multi-user Auth', 'Planned', 'JWT tokens, role-based access, multi-user dashboards'],
+        ['3 — Real Payment Rails', 'Planned', 'USDC transfers, bank APIs, escrow mechanisms'],
+        ['4 — AI Agent Platform', 'Planned', 'Anomaly detection, spending predictions, autonomous agent orchestration'],
     ]
 )
 
