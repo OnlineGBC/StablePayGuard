@@ -4,10 +4,10 @@ install:
 	pip install -r requirements.txt
 
 run:
-	python app.py
+	python app/app.py
 
 docker-build:
-	docker build -t codex-payrails .
+	docker build -t stablepayguard .
 
 docker-run:
-	docker run --env-file .env -p 5000:5000 codex-payrails
+	docker run --env-file .env -p 5000:5000 stablepayguard
