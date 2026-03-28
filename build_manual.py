@@ -156,6 +156,9 @@ toc_entries = [
     ('   23.11', 'The Fundamental Principle'),
     ('   23.12', 'Production Roadmap'),
     ('24.', 'Contributing Guidelines'),
+    ('25.', 'PolicyManager.sol and Security Audit'),
+    ('   25.1', 'The Role of PolicyManager.sol'),
+    ('   25.2', 'The Role of Slither Static Analysis'),
 ]
 for num, title_text in toc_entries:
     p = doc.add_paragraph()
@@ -1563,6 +1566,101 @@ for item in [
     'Formatting checked',
 ]:
     doc.add_paragraph(item, style='List Bullet')
+
+# ---------------------------------------------------------------------------
+# Section 25
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '25. PolicyManager.sol and Security Audit', level=1)
+
+add_heading(doc, '25.1 The Role of PolicyManager.sol', level=2)
+add_paragraph(doc, (
+    'PolicyManager.sol is the enforcement layer of StablePayGuard. It is a smart contract '
+    'written in Solidity and deployed on the Ethereum blockchain (currently Sepolia testnet '
+    'at address 0x16229C14aAa18C7bC069f5b9092f5Af8884f3781). Its sole job is to make '
+    'spending rules tamper-proof — rules that cannot be bypassed by the company, a rogue '
+    'employee, a compromised server, or even the person who deployed the contract.'
+))
+add_paragraph(doc, 'What it stores on-chain:')
+for item in [
+    'Spending policies: which AI agent wallet is authorised, in which token, up to what total budget, with what per-transaction cap, within what validity window, and for what stated purpose',
+    'A running total of how much has been spent against each policy',
+    'The active/inactive state of every policy',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_paragraph(doc, 'What it enforces at the moment of every payment:')
+for item in [
+    'The payment amount does not exceed the per-transaction limit',
+    'The running spend total plus this payment does not exceed the total budget',
+    'The current timestamp falls within the policy\'s valid date window',
+    'The caller is the agent wallet registered to this policy — no other wallet can approve payments against it',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_paragraph(doc, (
+    'Why this requires a smart contract and not a database: A traditional database runs on '
+    'servers the company controls. A database administrator, a compromised server, or a rogue '
+    'employee with system access can edit or delete records silently. A smart contract on the '
+    'blockchain cannot be edited after deployment. Every approval and rejection is permanently '
+    'recorded and independently verifiable by anyone with the contract address — including '
+    'external auditors who have no access to internal systems.'
+))
+add_paragraph(doc, (
+    'In the context of the three agent scenarios (SaaS vendor payments, contractor payments, '
+    'T&E reimbursements), PolicyManager.sol is the reason the CFO does not need to monitor '
+    'every transaction. The rules are on-chain. The contract enforces them continuously. '
+    'Humans are only needed for genuine exceptions.'
+))
+add_paragraph(doc, (
+    'The full list of contract functions and their access control is documented in '
+    'Section 15.4. The full security audit report is in contracts/audit/slither_report.md.'
+))
+
+add_heading(doc, '25.2 The Role of Slither Static Analysis', level=2)
+add_paragraph(doc, (
+    'Slither is a static analysis tool for Solidity smart contracts, built by Trail of Bits '
+    '— one of the leading blockchain security firms. It works by reading the contract source '
+    'code (without executing it) and automatically checking it against a library of 101 known '
+    'vulnerability patterns.'
+))
+add_paragraph(doc, 'Why static analysis is run before deployment:')
+for item in [
+    'Smart contracts are immutable once deployed — bugs cannot be patched with a software update',
+    'A single exploitable bug can result in irreversible loss of funds',
+    'Manual code review alone misses entire classes of vulnerabilities that automated tools catch reliably',
+    'Running a recognised tool and publishing the results is standard practice for any contract that will handle real value',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_paragraph(doc, 'What Slither checks for (among its 101 detectors):')
+for item in [
+    'Reentrancy attacks — the class of bug responsible for the $60M DAO hack in 2016',
+    'Integer overflow and underflow — arithmetic errors that can corrupt balances',
+    'Access control mistakes — functions that should be restricted but are callable by anyone',
+    'Uninitialized variables — state that defaults to zero in ways that may not be intended',
+    'Dangerous use of tx.origin — authentication bypass vulnerability',
+    'Unchecked return values — ignored failure signals from external calls',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_paragraph(doc, (
+    'For PolicyManager.sol, Slither ran all 101 detectors and found zero high and zero medium '
+    'issues. Two findings (an optimization and an informational note) were fixed before '
+    'finalizing the contract. One low-severity finding (block.timestamp drift of ±15 seconds) '
+    'was reviewed and accepted as immaterial given that policy windows are measured in days '
+    'to months. Mythril, a second tool using symbolic execution, independently confirmed the '
+    'same single finding.'
+))
+add_paragraph(doc, (
+    'Slither is also integrated into the GitHub Actions CI pipeline (audit.yml), which runs '
+    'automatically on every change to contracts/src/. This means any future modification to '
+    'the contract is automatically re-checked before it can be merged.'
+))
+add_paragraph(doc, (
+    'The complete audit report — including all findings, fix history, run commands, function '
+    'access control matrix, and Mythril results — is in contracts/audit/slither_report.md.'
+))
 
 # ---------------------------------------------------------------------------
 # Save
