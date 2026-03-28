@@ -11,4 +11,5 @@ build/
 .claude/
 .coverage
 app/instance/
+instance/
 *.dot

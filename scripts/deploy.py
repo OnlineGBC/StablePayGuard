@@ -55,7 +55,7 @@ print(f"Balance  : {w3.from_wei(w3.eth.get_balance(account.address), 'ether'):.4
 # -----------------------------------------------------------------------
 
 print("\nCompiling PolicyManager.sol ...")
-install_solc("0.8.20")
+install_solc("0.8.28")
 
 with open(SOL_FILE) as f:
     source = f.read()
@@ -63,7 +63,7 @@ with open(SOL_FILE) as f:
 compiled = compile_source(
     source,
     output_values=["abi", "bin"],
-    solc_version="0.8.20"
+    solc_version="0.8.28"
 )
 
 contract_id   = "<stdin>:PolicyManager"
