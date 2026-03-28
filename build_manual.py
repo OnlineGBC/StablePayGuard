@@ -142,6 +142,21 @@ toc_entries = [
     ('   21.5', 'Data Flow: Secret Loading'),
     ('   21.6', 'Deployment Architecture'),
     ('22.', 'Roadmap'),
+    ('23.', 'Business Scenario'),
+    ('   23.1', 'Ideal Customer Profile'),
+    ('   23.2', 'The Core Problem This Solves'),
+    ('   23.3', 'Why This Needs Crypto'),
+    ('   23.4', 'Cross-Border Payment Economics'),
+    ('   23.5', 'Agent A: SaaS Vendor Payments'),
+    ('   23.6', 'Agent B: Global Contractor Payments'),
+    ('   23.7', 'Agent C: Employee T&E Reimbursements'),
+    ('   23.8', 'All Three Agents Together'),
+    ('   23.9', 'Traditional AP vs. StablePayGuard'),
+    ('   23.10', 'Security Considerations'),
+    ('   23.11', 'The Fundamental Principle'),
+    ('   23.12', 'Production Roadmap'),
+    ('24.', 'Contributing Guidelines'),
+    ('25.', 'Smart Contract Security Audit'),
 ]
 for num, title_text in toc_entries:
     p = doc.add_paragraph()
@@ -1256,6 +1271,424 @@ add_table(doc,
         ['4 — AI Agent Platform', 'Planned', 'Anomaly detection, spending predictions, autonomous agent orchestration'],
     ]
 )
+
+# ---------------------------------------------------------------------------
+# Section 23
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '23. Business Scenario', level=1)
+
+add_heading(doc, '23.1 Ideal Customer Profile', level=2)
+add_paragraph(doc, 'The highest-value customer for this platform is a large global enterprise paying vendors, contractors, or partners across multiple countries at high volume.')
+add_table(doc,
+    ['Signal', 'Why It Matters'],
+    [
+        ['Cross-border payment volume', 'SWIFT wires cost $35–$75 each and take 1–5 days. USDC on Base costs $0.02 and settles in 2 seconds. At 500 international payments/month the fee savings alone are $17,500–$37,500/month.'],
+        ['High invoice volume', 'Human review of every invoice costs $15–$50 in staff time. At 1,000 invoices/month that is $15,000–$50,000/month in AP labor that automation eliminates for routine transactions.'],
+        ['Audit and compliance requirements', 'Blockchain audit trail is immutable and independently verifiable without internal system access — critical for SOX compliance, external audit, and fraud investigation.'],
+        ['Crypto treasury or digital asset strategy', 'Increasingly common among Fortune 500 companies. Paying vendors in USDC avoids FX conversion entirely when the treasury already holds stablecoins.'],
+        ['Globally distributed workforce', 'Contractor in Singapore, vendor in Germany, supplier in Brazil — one payment rail, same cost, same speed, regardless of destination.'],
+    ]
+)
+add_paragraph(doc, 'Industries With the Strongest Fit:')
+add_table(doc,
+    ['Industry', 'Specific Pain Point Solved'],
+    [
+        ['Technology (large enterprise)', 'Global SaaS vendor payments, remote contractor disbursements'],
+        ['Manufacturing', 'Cross-border supplier payments, multi-currency invoice settlement'],
+        ['Healthcare', 'International lab vendor payments, contractor reimbursements across jurisdictions'],
+        ['Real Estate', 'Cross-border property management, international contractor payments'],
+        ['Retail / E-commerce', 'Global fulfillment partner settlements, international marketplace fees'],
+        ['Professional Services', 'Cross-border subcontractor payments, international expert fees'],
+        ['Non-Profit / NGO', 'Grant disbursements to international programs with full audit trail'],
+        ['Government / Public Sector', 'Vendor payments within procurement rules, independently auditable'],
+    ]
+)
+add_paragraph(doc, 'The common thread: any large organization making repetitive cross-border payments within known rules, where the cost of human approval and wire transfer friction is significant.')
+
+add_heading(doc, '23.2 The Core Problem This Solves', level=2)
+add_paragraph(doc, 'Traditional Accounts Payable works like this:')
+for item in [
+    '1. Invoice arrives',
+    '2. Human reviews it',
+    '3. Human checks budget',
+    '4. Human checks vendor approval',
+    '5. Human approves payment',
+    '6. Payment executes',
+    '7. Human files the record',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+add_paragraph(doc, 'This process costs time, money, and introduces human error — for every single invoice, including the routine $1,800 AWS bill that has arrived on the same date every month for three years.')
+q = add_paragraph(doc, 'Humans define the rules once. AI agents execute within those rules continuously. The smart contract enforces the rules autonomously. Humans only act on exceptions.')
+q.runs[0].bold = True
+
+add_heading(doc, '23.3 Why This Needs Crypto', level=2)
+add_paragraph(doc, 'The enforcement logic can technically be built without crypto. Tools like Coupa, Tipalti, and Bill.com do something similar with traditional databases.')
+add_table(doc,
+    ['Capability', 'Traditional Database', 'Blockchain Smart Contract'],
+    [
+        ['Audit trail integrity', 'Internal database — can be edited by a DBA, wiped in a breach, or altered by an insider', 'Immutable — no one, including the company itself, can alter a confirmed transaction'],
+        ['Enforcement authority', 'Runs on servers the company controls — a compromised server or rogue admin can bypass rules', 'Smart contract cannot be bypassed even by the people who wrote it'],
+        ['Cross-border settlement', 'SWIFT wire: $35–$75, 1–5 days, multiple intermediaries', 'USDC on Base: $0.02, 2 seconds, no intermediaries'],
+        ['Independent verifiability', 'Requires internal system access for audit', 'Anyone with the contract address can verify every transaction'],
+        ['Fraud surface', 'Any human in the approval chain, any server in the payment path', 'Only the policy owner wallet can change rules'],
+    ]
+)
+add_paragraph(doc, 'When crypto is not necessary: A purely domestic company paying five local vendors in USD, with no cross-border volume, no external audit requirement, and simple AP needs does not need this platform.')
+add_paragraph(doc, 'When crypto is clearly the right choice:')
+for item in [
+    'Cross-border payment volume where wire fees are a real cost',
+    'Industries with external audit or compliance requirements where audit trail integrity must be beyond internal question',
+    'Companies already holding crypto or stablecoin treasuries',
+    'Organizations paying global contractors where banking access varies',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, '23.4 Cross-Border Payment Economics', level=2)
+add_paragraph(doc, '$1,000 payment to a contractor in Singapore:')
+add_table(doc,
+    ['Method', 'Sender Fee', 'Receiver Fee', 'FX Cost', 'Settlement Time'],
+    [
+        ['SWIFT wire', '$25–$50', '$10–$25', '1–3% spread', '1–5 business days'],
+        ['PayPal International', '3–5% ($30–$50)', 'None', '2–4% spread', 'Minutes to days'],
+        ['USDC on Base', '~$0.02', 'None', 'None (stablecoin)', '~2 seconds'],
+    ]
+)
+add_paragraph(doc, 'At 500 international payments per month, SWIFT costs $17,500–$37,500 in fees alone. USDC on Base costs approximately $10.')
+add_paragraph(doc, 'Why Base is the right network for enterprise use:')
+add_table(doc,
+    ['Property', 'Detail'],
+    [
+        ['Cost per transfer', '~$0.01–$0.05 regardless of amount sent'],
+        ['Settlement time', '~2 seconds (practical finality)'],
+        ['Full finality', '~1 minute (statistically irreversible)'],
+        ['USDC type', 'Native — issued directly by Circle, not bridged'],
+        ['Security model', 'Ethereum L2 — inherits Ethereum security'],
+        ['Institutional backing', 'Operated by Coinbase — compliance-friendly'],
+        ['Regulatory clarity', 'USDC issued under US money transmission licenses'],
+    ]
+)
+
+add_heading(doc, '23.5 Agent A: SaaS Vendor Payments', level=2)
+add_paragraph(doc, 'A global enterprise pays three SaaS vendors every month: AWS, GitHub, and Datadog. Rules: total monthly budget $15,000; maximum per transaction $2,000; approved vendors only; payments only within the current calendar month.')
+add_paragraph(doc, 'PHASE 1 — One-Time Human Setup:')
+add_table(doc,
+    ['Step', 'Who', 'What They Do', 'Time'],
+    [
+        ['1', 'CFO / AP Manager', 'Decides which vendors are approved: AWS, GitHub, Datadog', '10 min'],
+        ['2', 'CFO / AP Manager', 'Records each vendor\'s USDC payment wallet address', '10 min'],
+        ['3', 'CFO / AP Manager', 'Generates a cryptographic hash of the approved vendor list stored on-chain', '2 min'],
+        ['4', 'CFO / AP Manager', 'Creates the policy: agent wallet, token, $15,000 budget, $2,000 per-tx limit, valid date window, purpose hash', '2 min'],
+        ['5', 'CFO / AP Manager', 'Clicks Deploy — policy written to the blockchain permanently', '1 min'],
+        ['6', 'IT / Dev', 'Configures Agent A to monitor the AP invoice inbox', '1 hour'],
+        ['7', 'Vendors', 'Already send structured invoices — no change needed', '0 min'],
+    ]
+)
+add_paragraph(doc, 'Total human setup time: approximately 1.5 hours, done once.')
+add_paragraph(doc, 'PHASE 2 — Ongoing Agent Operation (No Human Required). When an invoice arrives from AWS for $1,800:')
+add_table(doc,
+    ['Step', 'Who', 'What Happens'],
+    [
+        ['1', 'Agent A', 'Detects new invoice in the AP inbox'],
+        ['2', 'Agent A', 'Parses vendor name, amount, due date, payment wallet address'],
+        ['3', 'Agent A', 'Checks: is this vendor on the approved list? Does the wallet address match?'],
+        ['4', 'Agent A', 'Calls the PolicyManager smart contract: "Can I pay $1,800 against policy POL-101?"'],
+        ['5', 'Smart Contract', 'Checks: amount <= per-tx limit ($1,800 <= $2,000)'],
+        ['6', 'Smart Contract', 'Checks: running total + amount <= monthly budget ($12,400 + $1,800 <= $15,000)'],
+        ['7', 'Smart Contract', 'Checks: today is within the valid date window'],
+        ['8', 'Smart Contract', 'Checks: vendor hash matches approved vendor list'],
+        ['9', 'Smart Contract', 'Approves the payment, updates running spend total on-chain'],
+        ['10', 'Agent A', 'Executes USDC transfer to AWS wallet — settles in ~2 seconds'],
+        ['11', 'Smart Contract', 'Emits PaymentApproved event — permanently recorded on-chain'],
+        ['12', 'Dashboard', 'Transaction appears in real time: amount, vendor, policy ID, network hash'],
+        ['13', 'CFO', 'Sees it on the dashboard — no action needed'],
+    ]
+)
+add_paragraph(doc, 'Total human time for this payment: zero minutes.')
+add_paragraph(doc, 'PHASE 3 — Exception Handling:')
+add_table(doc,
+    ['Situation', 'What the Contract Does', 'What the Agent Does', 'Human Action Required'],
+    [
+        ['Invoice for $1,800 from AWS (normal)', 'Approves', 'Pays', 'None'],
+        ['Invoice for $2,400 from AWS (over per-tx limit)', 'Rejects', 'Flags for human review', 'CFO decides: approve as exception or reject'],
+        ['Invoice from unknown vendor', 'Rejects — not on approved list', 'Flags for human review', 'AP Manager investigates'],
+        ['Monthly budget reaches $14,800 — $600 invoice arrives', 'Rejects — would exceed $15,000', 'Flags for human review', 'CFO decides: increase budget or defer to next month'],
+        ['Invoice arrives after policy expiry date', 'Rejects — policy expired', 'Flags for human review', 'CFO renews policy for new month'],
+        ['Duplicate invoice submitted twice', 'Rejects — budget already debited', 'Flags as duplicate', 'AP Manager confirms and closes'],
+    ]
+)
+
+add_heading(doc, '23.6 Agent B: Global Contractor Payments', level=2)
+add_paragraph(doc, 'A global enterprise pays independent contractors across multiple countries every two weeks. Rules: total monthly budget $50,000; maximum per transaction $5,000; pre-approved contractors only; payments only during business hours (Mon–Fri, 9am–6pm UTC).')
+add_paragraph(doc, 'PHASE 1 — One-Time Human Setup:')
+add_table(doc,
+    ['Step', 'Who', 'What They Do', 'Time'],
+    [
+        ['1', 'Legal / Procurement', 'Approves contractor roster — reviews contracts, verifies identities', '1–2 days (existing onboarding)'],
+        ['2', 'Procurement / AP Manager', 'Records each contractor\'s USDC wallet address — verified directly with contractor', '30 min per contractor'],
+        ['3', 'Legal', 'Finalises the master contractor agreement document', 'Existing process'],
+        ['4', 'AP Manager', 'Generates a cryptographic hash of the approved contractor list and master agreement', '5 min'],
+        ['5', 'AP Manager', 'Creates Agent B\'s policy: $50,000 monthly budget, $5,000 per-tx limit, USDC, purpose hash', '5 min'],
+        ['6', 'AP Manager', 'Sets business hours enforcement via validFrom/validUntil, renewed each week', '2 min per week'],
+        ['7', 'AP Manager', 'Clicks Deploy — policy written to blockchain', '1 min'],
+        ['8', 'IT / Dev', 'Configures Agent B to monitor the contractor invoice inbox', '1–2 hours'],
+        ['9', 'Contractors', 'Notified of USDC payment setup — provide wallet address, receive test transaction', '15 min per contractor'],
+    ]
+)
+add_paragraph(doc, 'PHASE 2 — Ongoing Agent Operation. When a contractor in Singapore submits an invoice for $3,200:')
+add_table(doc,
+    ['Step', 'Who', 'What Happens'],
+    [
+        ['1', 'Agent B', 'Detects new invoice — contractor name, amount, wallet address, invoice reference'],
+        ['2', 'Agent B', 'Verifies: is this contractor on the approved roster?'],
+        ['3', 'Agent B', 'Verifies: does the invoice reference the current active contractor agreement?'],
+        ['4', 'Agent B', 'Checks current time: is it Mon–Fri, 9am–6pm UTC?'],
+        ['5–9', 'Smart Contract', 'Checks: $3,200 <= $5,000 per-tx; running total <= $50,000; within valid window; hash matches'],
+        ['10', 'Smart Contract', 'Approves payment, updates running spend on-chain'],
+        ['11', 'Agent B', 'Executes USDC transfer — no bank, no SWIFT, no correspondent fees'],
+        ['12', 'Contractor', 'Receives $3,200 USDC in Singapore in ~2 seconds'],
+        ['13', 'Smart Contract', 'Emits PaymentApproved event — permanently recorded'],
+    ]
+)
+add_paragraph(doc, 'Traditional alternative: SWIFT wire to Singapore bank, $35–$50 sender fee, $15–$25 receiver fee, 2–4 business days.')
+add_paragraph(doc, 'With Agent B: $0.02, 2 seconds, full amount delivered, independently verifiable.')
+
+add_heading(doc, '23.7 Agent C: Employee T&E Reimbursements', level=2)
+add_paragraph(doc, 'Employees submit travel and expense claims after business trips. Rules: maximum per claim $500 (above this goes to manager approval); claims must match approved expense categories; processed within 24 hours.')
+add_paragraph(doc, 'PHASE 2 — When an employee submits a $240 claim for client dinner receipts:')
+add_table(doc,
+    ['Step', 'Who', 'What Happens'],
+    [
+        ['1', 'Employee', 'Submits expense claim: category (client entertainment), amount ($240), receipts, date'],
+        ['2', 'Agent C', 'Receives the claim via API from the expense portal'],
+        ['3–5', 'Agent C', 'Checks: category in approved T&E policy? Amount within per-category limit? Current policy hash?'],
+        ['6–10', 'Smart Contract', 'Checks: $240 <= $500 per-tx; running total within budget; within valid window; purposeHash matches'],
+        ['11', 'Smart Contract', 'Approves payment, updates running spend on-chain'],
+        ['12', 'Agent C', 'Executes USDC transfer to employee\'s registered wallet'],
+        ['13', 'Employee', 'Receives $240 USDC within seconds of submission — not 2 weeks'],
+    ]
+)
+
+add_heading(doc, '23.8 All Three Agents Together', level=2)
+add_paragraph(doc, 'At any point, the CFO sees on the dashboard:')
+add_table(doc,
+    ['Agent', 'Role', 'Monthly Budget', 'Spent', 'Remaining', 'Transactions'],
+    [
+        ['Agent A', 'SaaS vendor payments', '$15,000', '$12,400', '$2,600', '8 completed'],
+        ['Agent B', 'Contractor payments', '$50,000', '$31,200', '$18,800', '14 completed, 1 pending'],
+        ['Agent C', 'T&E reimbursements', '$25,000', '$8,750', '$16,250', '37 completed, 2 flagged'],
+    ]
+)
+add_paragraph(doc, 'No AP clerk had to touch any of the 59 completed transactions. A human was only needed for the 3 flagged exceptions.')
+
+add_heading(doc, '23.9 Traditional AP vs. StablePayGuard', level=2)
+add_table(doc,
+    ['Capability', 'Traditional AP', 'StablePayGuard'],
+    [
+        ['Payment approval', 'Human reviews every invoice', 'Smart contract enforces rules automatically'],
+        ['Audit trail', 'Internal database — can be edited', 'Immutable blockchain record — cannot be altered'],
+        ['Budget enforcement', 'Policy document + manual check', 'Hard-coded in smart contract — mathematically enforced'],
+        ['Vendor verification', 'Spreadsheet or ERP lookup', 'Cryptographic hash comparison on-chain'],
+        ['Exception handling', 'Everything is an exception', 'Only true exceptions reach a human'],
+        ['Cross-border speed', '1–5 business days', '~2 seconds'],
+        ['Cross-border cost', '$35–$75 per wire', '~$0.02 per transaction'],
+        ['Processing cost', '$15–$50 per invoice in staff time', 'Near zero for routine payments'],
+        ['Auditability', 'Requires internal system access', 'Anyone with the contract address can verify'],
+        ['Fraud surface', 'Any human in the approval chain', 'Only the policy owner wallet can change rules'],
+    ]
+)
+
+add_heading(doc, '23.10 Security Considerations', level=2)
+add_paragraph(doc, 'The statement "nobody can authorize a payment that violates the policy" holds true as long as the smart contract code has no bugs and the owner\'s private key is not compromised.')
+add_table(doc,
+    ['Risk', 'What Could Happen', 'Mitigation'],
+    [
+        ['Bug in smart contract', 'A logic error could allow payments that should be rejected', 'Professional audit by firms like OpenZeppelin or Certik before production'],
+        ['Private key compromise', 'Attacker becomes owner and can change policies', 'Hardware wallet (Ledger/Trezor) or multi-signature requiring 2-of-3 approvals'],
+        ['Compromised agent wallet', 'Attacker calls approvePayment within policy limits', 'Policy limits contain the blast radius — attacker cannot exceed what the policy allows'],
+        ['Reentrancy attack', 'Malicious contract loops back during payment execution', 'Use OpenZeppelin\'s ReentrancyGuard in production contract'],
+    ]
+)
+
+add_heading(doc, '23.11 The Fundamental Principle', level=2)
+add_paragraph(doc, 'The smart contract is not a convenience — it is the enforcement layer.')
+add_paragraph(doc, 'The agent does not need to be trusted. The CFO does not need to monitor every payment. The AP team does not need to touch routine invoices.')
+add_paragraph(doc, 'The rules are on-chain. The contract enforces them. A rogue employee cannot override them. A compromised server cannot bypass them. Even the company that deployed the contract cannot silently alter a payment record after the fact.')
+p = add_paragraph(doc, 'That is what makes this fundamentally different from every existing AP automation tool — and why the blockchain layer is not optional.')
+p.runs[0].bold = True
+
+add_heading(doc, '23.12 Production Roadmap', level=2)
+add_table(doc,
+    ['Phase', 'What Gets Added', 'Business Benefit'],
+    [
+        ['Phase 1 — Current', 'Policy engine, on-chain enforcement, dashboard, Uniswap pricing', 'Working prototype demonstrating the full concept'],
+        ['Phase 2 — Data Layer', 'PostgreSQL persistence, user authentication, multi-user dashboards, role-based access', 'CFO, AP Manager, and auditor each see their relevant view'],
+        ['Phase 3 — Real Payment Rails', 'Mainnet deployment, real USDC settlement, bank API integration (ACH/SWIFT)', 'Actual money movement at production scale'],
+        ['Phase 4 — AI Agent Platform', 'Anomaly detection, spending predictions, policy auto-optimization, multi-agent coordination', 'Proactive controls — system flags unusual patterns before they become problems'],
+    ]
+)
+
+# ---------------------------------------------------------------------------
+# Section 24
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '24. Contributing Guidelines', level=1)
+
+add_heading(doc, 'Workflow', level=2)
+for item in [
+    '1. Fork the repository',
+    '2. Create a feature branch: git checkout -b feature/my-feature',
+    '3. Make your changes',
+    '4. Commit using a clear message: git commit -m "Add feature"',
+    '5. Push your branch: git push origin feature/my-feature',
+    '6. Open a pull request',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'Guidelines', level=2)
+for item in [
+    'Follow PEP 8 for Python code',
+    'Keep HTML/CSS changes visually consistent with the dashboard theme',
+    'Document new API endpoints in the Manual',
+    'Add tests where practical',
+    'Keep commits focused and readable',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+add_heading(doc, 'Pull Request Checklist', level=2)
+for item in [
+    'Code runs locally',
+    'No secrets committed',
+    'Manual updated if behavior changed',
+    'New configuration documented',
+    'Formatting checked',
+]:
+    doc.add_paragraph(item, style='List Bullet')
+
+# ---------------------------------------------------------------------------
+# Section 25
+# ---------------------------------------------------------------------------
+
+add_heading(doc, '25. Smart Contract Security Audit', level=1)
+
+add_heading(doc, 'Audit Summary', level=2)
+add_table(doc,
+    ['Property', 'Value'],
+    [
+        ['Tool', 'Slither v0.11.5'],
+        ['Contract', 'contracts/src/PolicyManager.sol'],
+        ['Solidity', '0.8.28'],
+        ['Date', '2026-03-14'],
+        ['Network (deployed)', 'Sepolia testnet'],
+        ['Contract address', '0x16229C14aAa18C7bC069f5b9092f5Af8884f3781'],
+    ]
+)
+add_table(doc,
+    ['Metric', 'Result'],
+    [
+        ['Contracts analyzed', '1'],
+        ['Source lines of code (SLOC)', '110'],
+        ['High issues', '0'],
+        ['Medium issues', '0'],
+        ['Low issues', '1 (accepted — see below)'],
+        ['Optimization issues', '0'],
+        ['Informational issues', '0'],
+        ['Detectors run', '101'],
+    ]
+)
+
+add_heading(doc, 'Run Commands', level=2)
+add_code(doc, 'solc-select use 0.8.28\nslither contracts/src/PolicyManager.sol\nslither contracts/src/PolicyManager.sol --print human-summary\nslither contracts/src/PolicyManager.sol --print contract-summary\nslither contracts/src/PolicyManager.sol --print function-summary')
+
+add_heading(doc, 'Finding 1 — immutable-states (FIXED)', level=2)
+add_table(doc,
+    ['Property', 'Detail'],
+    [
+        ['Severity', 'Optimization'],
+        ['Location', 'PolicyManager.sol line 30'],
+        ['Original', 'address public owner;'],
+        ['Fixed', 'address public immutable owner;'],
+    ]
+)
+add_paragraph(doc, 'Why this matters: A state variable set only in the constructor and never modified should be immutable. This saves gas on every read (~200 gas per SLOAD vs ~3 gas for an immutable) and prevents accidental reassignment in future upgrades.')
+
+add_heading(doc, 'Finding 2 — solc-version (FIXED)', level=2)
+add_table(doc,
+    ['Property', 'Detail'],
+    [
+        ['Severity', 'Informational'],
+        ['Location', 'PolicyManager.sol line 2'],
+        ['Original', 'pragma solidity ^0.8.20;'],
+        ['Fixed', 'pragma solidity 0.8.28;'],
+    ]
+)
+add_paragraph(doc, 'Why this matters: The ^0.8.20 range permitted compilation with versions containing three known compiler bugs (VerbatimInvalidDeduplication, FullInlinerNonExpressionSplitArgumentEvaluationOrder, MissingSideEffectsOnSelectorAccess). Pinning to 0.8.28 uses the latest stable release with all known issues resolved.')
+
+add_heading(doc, 'Finding 3 — block.timestamp comparisons (ACCEPTED RISK)', level=2)
+add_table(doc,
+    ['Property', 'Detail'],
+    [
+        ['Severity', 'Low'],
+        ['Location', 'approvePayment() lines 121–122'],
+        ['Detector', 'timestamp'],
+    ]
+)
+add_code(doc, 'require(block.timestamp >= p.validFrom, "Policy not yet active");\nrequire(block.timestamp <= p.validUntil, "Policy expired");')
+add_paragraph(doc, 'Slither warning: Block timestamps can be manipulated by validators by ±15 seconds.')
+add_paragraph(doc, 'Assessment: Accepted. Policy validity windows in this system are measured in days to months. A 15-second drift has no meaningful impact. This is the standard accepted pattern for date-range enforcement in Solidity — used in OpenZeppelin\'s TimelockController, VestingWallet, and Governor contracts.')
+
+add_heading(doc, 'What Slither Did NOT Find', level=2)
+add_table(doc,
+    ['Category', 'Detectors', 'Result'],
+    [
+        ['Reentrancy', 'reentrancy-eth, reentrancy-no-eth, reentrancy-benign, reentrancy-events', 'Clean'],
+        ['Access control', 'suicidal, controlled-delegatecall, arbitrary-send-eth', 'Clean'],
+        ['Integer arithmetic', 'tautology, divide-before-multiply, weak-prng', 'Clean'],
+        ['Unchecked returns', 'unchecked-transfer, unchecked-send, unchecked-lowlevel', 'Clean'],
+        ['Dangerous calls', 'delegatecall-loop, msg-value-loop, calls-loop', 'Clean'],
+        ['Variable shadowing', 'shadowing-abstract, shadowing-local, shadowing-state', 'Clean'],
+        ['Initialization', 'uninitialized-local, uninitialized-state, uninitialized-storage', 'Clean'],
+        ['tx.origin misuse', 'tx-origin', 'Clean'],
+        ['Dangerous strict equality', 'incorrect-equality', 'Clean'],
+        ['Events missing', 'events-access, events-maths', 'Clean'],
+        ['Assembly', 'All assembly detectors', 'N/A (no assembly)'],
+    ]
+)
+add_paragraph(doc, 'No function makes external calls to untrusted contracts — reentrancy is architecturally impossible.')
+
+add_heading(doc, 'Function Access Control Matrix', level=2)
+add_table(doc,
+    ['Function', 'Access', 'Modifies State', 'External Calls'],
+    [
+        ['constructor()', 'deployer only', 'owner', 'None'],
+        ['createPolicy(...)', 'onlyOwner', 'policies, agentPolicies, policyCount', 'None'],
+        ['approvePayment(...)', 'policy agent only', 'policies.spentAmount', 'None'],
+        ['deactivatePolicy(...)', 'onlyOwner', 'policies.active', 'None'],
+        ['getPolicy(...)', 'public', 'None (view)', 'None'],
+        ['getAgentPolicies(...)', 'public', 'None (view)', 'None'],
+        ['remainingBudget(...)', 'public', 'None (view)', 'None'],
+    ]
+)
+
+add_heading(doc, 'Mythril Symbolic Execution', level=2)
+add_table(doc,
+    ['SWC ID', 'Title', 'Severity', 'Outcome'],
+    [
+        ['SWC-116', 'Dependence on predictable environment variable (block.timestamp)', 'Low', 'Accepted — same rationale as Slither finding #3 above'],
+    ]
+)
+add_paragraph(doc, 'No additional findings beyond what Slither detected. Mythril\'s symbolic execution explored all function paths including constructor → createPolicy → approvePayment and found no reentrancy, no integer overflow, no access control bypass, no selfdestruct.')
+add_paragraph(doc, '--swc-blacklist 116 is set in CI to suppress the accepted finding and keep the pipeline green.')
+
+add_heading(doc, 'Conclusion', level=2)
+add_paragraph(doc, 'PolicyManager.sol is a compact, low-complexity contract (110 SLOC, 7 functions, no assembly, no external calls). After fixing the two automated findings, the contract presents no high or medium vulnerabilities as detected by Slither\'s full 101-detector suite.')
+add_paragraph(doc, 'Recommended before mainnet deployment:')
+for item in [
+    'Manual audit by a professional firm (OpenZeppelin, Trail of Bits, or Hacken)',
+    'Formal verification of the budget accounting invariant (spentAmount <= totalBudget)',
+    'Bug bounty program on Immunefi',
+]:
+    doc.add_paragraph(item, style='List Bullet')
 
 # ---------------------------------------------------------------------------
 # Save
